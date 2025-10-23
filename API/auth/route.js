@@ -1,49 +1,61 @@
-import { SUPABASE_URL, SUPABASE_ANON_KEY } from "../../supabaseConfig.js";
 
-// Usa el global creado por el CDN y evita shadowing del nombre "supabase"
-const supabaseClient = globalThis.supabase?.createClient
-  ? globalThis.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY)
-  : null;
+async function initSupabase() {
+    // Llama a la API que devuelve las claves correctas
+    const response = await fetch("/api/config");
+    const config = await response.json();
 
-if (!supabaseClient) {
-  throw new Error("Supabase no está disponible. Asegúrate de incluir el script CDN antes de este módulo.");
+    if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
+        alert("No se pudieron obtener las claves de Supabase.");
+        return null;
+    }
+
+    const supabaseClient = supabase.createClient(
+        config.SUPABASE_URL,
+        config.SUPABASE_ANON_KEY
+    );
+    return supabaseClient;
 }
 
 export async function signIn(email, password) {
-  const { data: authData, error: authError } =
-    await supabaseClient.auth.signInWithPassword({ email, password });
+    const supabaseClient = await initSupabase();
+    if (!supabaseClient) {
+        return { error: new Error("No se pudo inicializar Supabase.") };
+    }
 
-  if (authError) {
-    return { error: authError };
-  }
+    const { data: authData, error: authError } =
+        await supabaseClient.auth.signInWithPassword({ email, password });
 
-  const user = authData.user;
+    if (authError) {
+        return { error: authError };
+    }
 
-  const { data: usuarioData, error: dbError } = await supabaseClient
-    .from("usuarios")
-    .select("idrol")
-    .eq("email", user.email)
-    .single();
+    const user = authData.user;
 
-  if (dbError) {
-    return { error: dbError };
-  }
+    const { data: usuarioData, error: dbError } = await supabaseClient
+        .from("usuarios")
+        .select("idrol")
+        .eq("email", user.email)
+        .single();
 
-  const idrol = usuarioData.idrol;
+    if (dbError) {
+        return { error: dbError };
+    }
 
-  switch (idrol) {
-    case 1:
-      window.location.href = "/mainpage/admin.html";
-      break;
-    case 2:
-      window.location.href = "/mainpage/mantenimiento.html";
-      break;
-    case 3:
-      window.location.href = "/mainpage/recepcionista.html";
-      break;
-    default:
-      return { error: new Error("Rol desconocido, contacta al administrador.") };
-  }
+    const idrol = usuarioData.idrol;
 
-  return { error: null };
+    switch (idrol) {
+        case 1:
+            window.location.href = "/mainpage/admin.html";
+            break;
+        case 2:
+            window.location.href = "/mainpage/mantenimiento.html";
+            break;
+        case 3:
+            window.location.href = "/mainpage/recepcionista.html";
+            break;
+        default:
+            return { error: new Error("Rol desconocido, contacta al administrador.") };
+    }
+
+    return { error: null };
 }
