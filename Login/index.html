@@ -31,7 +31,7 @@
       const password = document.getElementById('password').value;
       
       try {
-        const { signIn } = await import('/API/auth/route.js');
+        const { signIn } = await import('/api/auth/route.js');
         const result = await signIn(email, password);
         
         if (result.error) {
