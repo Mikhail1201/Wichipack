@@ -37,7 +37,7 @@ export default async function handler(req, res) {
     const { idrol } = usuarioData;
     return res.status(200).json({ success: true, idrol });
   } catch (err) {
-    console.error("Error en /api/auth/route.js:", err);
+    console.error("Error en /api/auth.js:", err);
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 }
