@@ -1,7 +1,7 @@
 
 async function initSupabase() {
     // Llama a la API que devuelve las claves correctas
-    const response = await fetch("/api/config");
+    const response = await fetch("/API/config.js");
     const config = await response.json();
 
     if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
