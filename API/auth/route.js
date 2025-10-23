@@ -1,61 +1,43 @@
+import { createClient } from "@supabase/supabase-js";
 
-async function initSupabase() {
-    // Llama a la API que devuelve las claves correctas
-    const response = await fetch("/api/config.js");
-    const config = await response.json();
+export default async function handler(req, res) {
+  if (req.method !== "POST") {
+    return res.status(405).json({ error: "Método no permitido" });
+  }
 
-    if (!config.SUPABASE_URL || !config.SUPABASE_ANON_KEY) {
-        alert("No se pudieron obtener las claves de Supabase.");
-        return null;
-    }
+  try {
+    const { email, password } = req.body;
 
-    const supabaseClient = supabase.createClient(
-        config.SUPABASE_URL,
-        config.SUPABASE_ANON_KEY
-    );
-    return supabaseClient;
-}
+    const SUPABASE_URL = process.env.SUPABASE_URL;
+    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
 
-export async function signIn(email, password) {
-    const supabaseClient = await initSupabase();
-    if (!supabaseClient) {
-        return { error: new Error("No se pudo inicializar Supabase.") };
-    }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
+    // Autenticación
     const { data: authData, error: authError } =
-        await supabaseClient.auth.signInWithPassword({ email, password });
+      await supabase.auth.signInWithPassword({ email, password });
 
     if (authError) {
-        return { error: authError };
+      return res.status(401).json({ error: authError.message });
     }
 
     const user = authData.user;
 
-    const { data: usuarioData, error: dbError } = await supabaseClient
-        .from("usuarios")
-        .select("idrol")
-        .eq("email", user.email)
-        .single();
+    // Buscar rol en la tabla usuarios
+    const { data: usuarioData, error: dbError } = await supabase
+      .from("usuarios")
+      .select("idrol")
+      .eq("email", user.email)
+      .single();
 
-    if (dbError) {
-        return { error: dbError };
+    if (dbError || !usuarioData) {
+      return res.status(404).json({ error: "Usuario no encontrado en la base de datos" });
     }
 
-    const idrol = usuarioData.idrol;
-
-    switch (idrol) {
-        case 1:
-            window.location.href = "/mainpage/admin.html";
-            break;
-        case 2:
-            window.location.href = "/mainpage/mantenimiento.html";
-            break;
-        case 3:
-            window.location.href = "/mainpage/recepcionista.html";
-            break;
-        default:
-            return { error: new Error("Rol desconocido, contacta al administrador.") };
-    }
-
-    return { error: null };
+    const { idrol } = usuarioData;
+    return res.status(200).json({ success: true, idrol });
+  } catch (err) {
+    console.error("Error en /api/auth/route.js:", err);
+    return res.status(500).json({ error: "Error interno del servidor" });
+  }
 }
