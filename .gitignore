@@ -1,2 +1,5 @@
 supabaseConfig.js
 .vercel
+
+.env.local
+node_modules/
