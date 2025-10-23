@@ -13,7 +13,7 @@
     
     <!-- Formulario corregido -->
     <form id="loginForm">
-      <input type="text" id="username" placeholder="Usuario" required>
+      <input type="email" id="email" placeholder="email" required>
       <input type="password" id="password" placeholder="Contraseña" required>
       <button type="submit">Entrar</button>
     </form>
@@ -21,6 +21,27 @@
     <p class="credits">© 2025 WichiPack | Alquiler de Patinetas</p>
   </div>
 
-  <script src="../app.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script type="module" src="/API/auth/route.js"></script>
+  <script>
+    document.getElementById('loginForm').addEventListener('submit', async function(event) {
+      event.preventDefault();
+      
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      
+      try {
+        const { signIn } = await import('/API/auth/route.js');
+        const result = await signIn(email, password);
+        
+        if (result.error) {
+          alert('Error al iniciar sesión: ' + result.error.message);
+        }
+      } catch (error) {
+        console.error('Error en el inicio de sesión:', error);
+        alert('Ocurrió un error inesperado.');
+      }
+    });
+  </script>
 </body>
 </html>
