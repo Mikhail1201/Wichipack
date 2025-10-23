@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Mantenimiento - WichiPack</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="admin-body">
+  <header class="admin-header">
+    <h1 class="logo">WichiPack</h1>
+    <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-content">
+      <h2>Bienvenido, Mantenimiento</h2>
+      <p class="subtitle">Acceso exclusivo al inventario</p>
+
+      <div class="admin-options">
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">📦 Inventario</button>
+          <div class="dropdown-content">
+            <a href="agregar_producto.html">Agregar producto</a>
+            <a href="administrar_inventario.html">Administrar inventario</a>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+
+    // Dropdown functionality
+    document.querySelectorAll('.dropdown-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const dropdown = btn.parentElement;
+        const content = dropdown.querySelector('.dropdown-content');
+        
+        // Cerrar otros dropdowns
+        document.querySelectorAll('.dropdown-content').forEach(dc => {
+          if (dc !== content) dc.classList.remove('show');
+        });
+        
+        // Toggle actual dropdown
+        content.classList.toggle('show');
+      });
+    });
+
+    // Cerrar dropdowns al hacer clic fuera
+    document.addEventListener('click', () => {
+      document.querySelectorAll('.dropdown-content').forEach(dc => {
+        dc.classList.remove('show');
+      });
+    });
+  </script>
+</body>
+</html>

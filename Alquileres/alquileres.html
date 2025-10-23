@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Alquileres - WichiPack</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="admin-body">
+    <header class="admin-header">
+        <h1 class="logo">WichiPack</h1>
+        <button class="btn-volver" onclick="window.history.back()">← Volver</button>
+    </header>
+
+    <main class="admin-main">
+        <div class="admin-content">
+            <h2 class="titulo-seccion">Alquileres en Tiempo Real</h2>
+            
+            <div class="alquileres-header">
+                <div class="stat-card">
+                    <div class="stat-number" id="totalAlquileres">0</div>
+                    <div class="stat-label">Alquileres Activos</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="ingresoHoy">$0</div>
+                    <div class="stat-label">Ingresos Hoy</div>
+                </div>
+                <div class="stat-card">
+                    <div class="stat-number" id="proximosVencimientos">0</div>
+                    <div class="stat-label">Vencen Hoy</div>
+                </div>
+            </div>
+
+            <div class="alquileres-filtros">
+                <input 
+                    type="text" 
+                    id="buscarAlquiler" 
+                    placeholder="Buscar por cliente o producto..." 
+                    class="filtro-input"
+                >
+                <select id="filtroEstado" class="filtro-select">
+                    <option value="todos">Todos los estados</option>
+                    <option value="activo">Activos</option>
+                    <option value="vencido">Vencidos</option>
+                    <option value="proximo">Próximos a vencer</option>
+                </select>
+            </div>
+
+            <div class="alquileres-container">
+                <table class="tabla">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Cliente</th>
+                            <th>Producto</th>
+                            <th>Fecha Inicio</th>
+                            <th>Fecha Vencimiento</th>
+                            <th>Precio/Día</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody id="alquileres-body">
+                        <tr>
+                            <td colspan="8" style="text-align: center; padding: 40px; color: #9DB2BF;">
+                                No hay alquileres registrados
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <div class="alquileres-actions">
+                <button class="btn-primary" onclick="window.location.href='crear_alquiler.html'">
+                    + Nuevo Alquiler
+                </button>
+            </div>
+        </div>
+    </main>
+
+    <script src="../app.js"></script>
+    <script>
+        // Datos de ejemplo
+        const alquileresEjemplo = [
+            {
+                id: 1,
+                cliente: "Juan Pérez",
+                producto: "Patineta Pro X500",
+                fechaInicio: "2025-10-15",
+                fechaVencimiento: "2025-10-19",
+                precioDia: 50000,
+                estado: "activo"
+            },
+            {
+                id: 2,
+                cliente: "María García",
+                producto: "Patineta Freestyle",
+                fechaInicio: "2025-10-10",
+                fechaVencimiento: "2025-10-18",
+                precioDia: 35000,
+                estado: "activo"
+            },
+            {
+                id: 3,
+                cliente: "Carlos López",
+                producto: "Patineta Mountain",
+                fechaInicio: "2025-10-01",
+                fechaVencimiento: "2025-10-17",
+                precioDia: 45000,
+                estado: "proximo"
+            }
+        ];
+
+        function cargarAlquileres() {
+            const alquileres = JSON.parse(localStorage.getItem('alquileres')) || alquileresEjemplo;
+            mostrarAlquileres(alquileres);
+            actualizarEstadisticas(alquileres);
+        }
+
+        function mostrarAlquileres(alquileres) {
+            const body = document.getElementById('alquileres-body');
+            
+            if (alquileres.length === 0) {
+                body.innerHTML = `
+                    <tr>
+                        <td colspan="8" style="text-align: center; padding: 40px; color: #9DB2BF;">
+                            No hay alquileres registrados
+                        </td>
+                    </tr>
+                `;
+                return;
+            }
+
+            body.innerHTML = alquileres.map(alquiler => {
+                const estadoBadge = getEstadoBadge(alquiler.estado);
+                return `
+                    <tr>
+                        <td>${alquiler.id}</td>
+                        <td>${alquiler.cliente}</td>
+                        <td>${alquiler.producto}</td>
+                        <td>${formatearFecha(alquiler.fechaInicio)}</td>
+                        <td>${formatearFecha(alquiler.fechaVencimiento)}</td>
+                        <td>$${alquiler.precioDia.toLocaleString('es-CO')}</td>
+                        <td>
+                            <span class="estado-badge ${alquiler.estado}">
+                                ${estadoBadge}
+                            </span>
+                        </td>
+                        <td>
+                            <button class="btn-editar" onclick="editarAlquiler(${alquiler.id})">✏️</button>
+                            <button class="btn-eliminar" onclick="eliminarAlquiler(${alquiler.id})">🗑️</button>
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        }
+
+        function getEstadoBadge(estado) {
+            const estados = {
+                'activo': 'Activo',
+                'vencido': 'Vencido',
+                'proximo': 'Próximo a vencer'
+            };
+            return estados[estado] || 'Desconocido';
+        }
+
+        function formatearFecha(fecha) {
+            const date = new Date(fecha);
+            return date.toLocaleDateString('es-ES', { 
+                year: 'numeric', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+        }
+
+        function actualizarEstadisticas(alquileres) {
+            const hoy = new Date().toISOString().split('T')[0];
+            
+            // Total de alquileres activos
+            const activos = alquileres.filter(a => a.estado === 'activo').length;
+            document.getElementById('totalAlquileres').textContent = activos;
+
+            // Ingresos de hoy
+            const ingresoHoy = alquileres
+                .filter(a => a.estado === 'activo')
+                .reduce((sum, a) => sum + a.precioDia, 0);
+            document.getElementById('ingresoHoy').textContent = '$' + ingresoHoy.toLocaleString('es-CO');
+
+            // Próximos a vencer hoy
+            const vencenHoy = alquileres.filter(a => a.fechaVencimiento === hoy).length;
+            document.getElementById('proximosVencimientos').textContent = vencenHoy;
+        }
+
+        function filtrarAlquileres() {
+            const busqueda = document.getElementById('buscarAlquiler').value.toLowerCase();
+            const estado = document.getElementById('filtroEstado').value;
+            let alquileres = JSON.parse(localStorage.getItem('alquileres')) || alquileresEjemplo;
+
+            alquileres = alquileres.filter(a => {
+                const coincideBusqueda = a.cliente.toLowerCase().includes(busqueda) ||
+                                       a.producto.toLowerCase().includes(busqueda);
+                const coincideEstado = estado === 'todos' || a.estado === estado;
+                return coincideBusqueda && coincideEstado;
+            });
+
+            mostrarAlquileres(alquileres);
+        }
+
+        function editarAlquiler(id) {
+            alert('Función de edición en desarrollo');
+        }
+
+        function eliminarAlquiler(id) {
+            if (confirm('¿Estás seguro de que deseas eliminar este alquiler?')) {
+                let alquileres = JSON.parse(localStorage.getItem('alquileres')) || alquileresEjemplo;
+                alquileres = alquileres.filter(a => a.id !== id);
+                localStorage.setItem('alquileres', JSON.stringify(alquileres));
+                cargarAlquileres();
+                alert('Alquiler eliminado correctamente');
+            }
+        }
+
+        // Event listeners para filtros
+        document.getElementById('buscarAlquiler').addEventListener('input', filtrarAlquileres);
+        document.getElementById('filtroEstado').addEventListener('change', filtrarAlquileres);
+
+        // Cargar alquileres al iniciar
+        document.addEventListener('DOMContentLoaded', cargarAlquileres);
+
+        // Actualizar cada minuto
+        setInterval(cargarAlquileres, 60000);
+    </script>
+</body>
+</html>

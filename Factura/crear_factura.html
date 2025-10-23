@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Crear Factura</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body>
+    <!-- HEADER -->
+    <div class="header">
+        <h1>CREAR FACTURA</h1>
+        <button class="btn-cerrar" onclick="cerrarPagina()">✕</button>
+    </div>
+
+    <div class="container">
+        <div class="factura-card">
+            <div class="factura-header">
+                <div class="numero-factura">Factura #<span id="num-factura">000001</span></div>
+                <div class="estado pendiente">Pendiente</div>
+            </div>
+
+            <div class="form-group">
+                <label>Cliente</label>
+                <select id="cliente-select">
+                    <option value="">Seleccionar cliente...</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label>Fecha</label>
+                <input type="date" id="fecha-factura">
+            </div>
+
+            <div class="productos-section">
+                <h3>Productos</h3>
+                <div id="productos-lista" class="productos-lista"></div>
+                <button class="btn-agregar-producto" onclick="agregarProducto()">+ Agregar Producto</button>
+            </div>
+
+            <div class="totales">
+                <div class="total-item">
+                    <span>Subtotal:</span>
+                    <span id="subtotal">$0</span>
+                </div>
+                <div class="total-item">
+                    <span>IVA (19%):</span>
+                    <span id="iva">$0</span>
+                </div>
+                <div class="total-item total-final">
+                    <span>TOTAL:</span>
+                    <span id="total">$0</span>
+                </div>
+            </div>
+
+            <div class="botones-accion">
+                <button class="btn-accion btn-guardar" onclick="guardarFactura()">Guardar</button>
+                <button class="btn-accion btn-cancelar" onclick="cancelarFactura()">Cancelar</button>
+            </div>
+            <button class="btn-accion btn-volver" onclick="volverMenu()">Volver al Menú</button>
+        </div>
+    </div>
+
+    <script src="../app.js"></script>
+</body>
+</html>

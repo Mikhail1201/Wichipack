@@ -1,0 +1,66 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Panel Recepcionista - WichiPack</title>
+  <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="admin-body">
+  <header class="admin-header">
+    <h1 class="logo">WichiPack</h1>
+    <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-content">
+      <h2>Bienvenido, Recepcionista</h2>
+      <p class="subtitle">¿Qué deseas hacer hoy?</p>
+
+      <div class="admin-options">
+        
+        <!-- Facturación -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">📄 Facturación</button>
+          <div class="dropdown-content">
+            <a href="crear_factura.html">Crear Factura</a>
+            <a href="reporte_factura.html">Registro de Facturas</a>
+          </div>
+        </div>
+
+        <!-- Inventario -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">📦 Inventario</button>
+          <div class="dropdown-content">
+            <a href="administrar_inventario.html">Ver Inventario</a>
+          </div>
+        </div>
+
+        <!-- Alquileres -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">🛴 Alquileres</button>
+          <div class="dropdown-content">
+            <a href="alquileres.html">Ver alquileres</a>
+          </div>
+        </div>
+
+        <!-- Clientes -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">👤 Clientes</button>
+          <div class="dropdown-content">
+            <a href="crear_cliente.html">Crear cliente</a>
+            <a href="administrar_clientes.html">Administrar clientes</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById('logoutBtn').addEventListener('click', () => {
+      window.location.href = 'index.html';
+    });
+  </script>
+</body>
+</html>

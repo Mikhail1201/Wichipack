@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Panel Administrador - WichiPack</title>
+  <link rel="stylesheet" href="../styles.css" />
+</head>
+
+<body class="admin-body">
+  <header class="admin-header">
+    <h1 class="logo">WichiPack</h1>
+    <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+  </header>
+
+  <main class="admin-main">
+    <div class="admin-content">
+      <h2>Opciones del Administrador</h2>
+      <div class="admin-options">
+        
+        <!-- Facturación -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">📄 Facturación</button>
+          <div class="dropdown-content">
+            <a href="/Factura/crear_factura.html">➕ Crear Factura</a>
+            <a href="/Factura/reporte_factura.html"> 📄 Registro de Facturas</a>
+          </div>
+        </div>
+
+        <!-- Inventario -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">📦 Inventario</button>
+          <div class="dropdown-content">
+            <a href="/Inventario/agregar_producto.html">➕ Agregar producto</a>
+            <a href="/Inventario/administrar_inventario.html"> 📄 Administrar inventario</a>
+          </div>
+        </div>
+
+        <!-- Alquileres -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">🛴 Alquileres</button>
+          <div class="dropdown-content">
+            <a href="/Alquileres/alquileres.html"> 📄 Administrar alquileres</a>
+          </div>
+        </div>
+
+        <!-- Usuarios -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">👥 Usuarios</button>
+          <div class="dropdown-content">
+            <a href="/Usuarios/crear_usuario.html">➕ Crear usuario</a>
+            <a href="/Usuarios/administrar_usuarios.html"> 📄 Administrar usuarios</a>
+          </div>
+        </div>
+
+        <!-- Clientes -->
+        <div class="dropdown">
+          <button class="admin-card dropdown-btn">👤 Clientes</button>
+          <div class="dropdown-content">
+            <a href="/clientes/crear_cliente.html">➕ Crear cliente</a>
+            <a href="/clientes/administrar_clientes.html"> 📄 Administrar clientes</a>
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    document.getElementById("logoutBtn").addEventListener("click", () => {
+      window.location.href = "/login/index.html";
+    });
+  </script>
+</body>
+</html>
