@@ -16,15 +16,80 @@
     <div class="admin-content">
       <h2 class="titulo-seccion">Crear Cliente</h2>
       <form class="formulario">
-        <label>Nombre completo:</label>
+        <label>Cédula</label>
+        <input type="number" placeholder="Ingrese su cedula" required>
+        <label>Nombre</label>
         <input type="text" placeholder="Ingrese el nombre" required>
+        <label>Apellido:</label>
+        <input type="text" placeholder="Ingrese el apellido" required>
         <label>Correo electrónico:</label>
         <input type="email" placeholder="Ingrese el correo" required>
         <label>Teléfono:</label>
-        <input type="tel" placeholder="Ingrese el número" required>
+        <input type="number" placeholder="Ingrese el número" required>
+        <label>Direccion:</label>
+        <input type="text" placeholder="Ingrese su direccion" required>
         <button type="submit" class="btn-guardar">Guardar Cliente</button>
       </form>
     </div>
   </main>
+  <script>
+  document.addEventListener("DOMContentLoaded", () => {
+    const form = document.querySelector(".formulario");
+
+    form.addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      // Obtener los valores del formulario
+      const inputs = form.querySelectorAll("input");
+      const cedula = inputs[0].value.trim();
+      const nombre = inputs[1].value.trim();
+      const apellido = inputs[2].value.trim();
+      const email = inputs[3].value.trim();
+      const telefono = inputs[4].value.trim();
+      const direccion = inputs[5].value.trim();
+
+      // Validar que todos los campos estén completos
+      if (!cedula || !nombre || !apellido || !email || !telefono || !direccion) {
+        alert("Por favor, completa todos los campos antes de guardar.");
+        return;
+      }
+
+      try {
+        const response = await fetch("/api/createClient", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            cedula,
+            nombre,
+            apellido,
+            telefono,
+            email,
+            direccion,
+          }),
+        });
+
+        const result = await response.json();
+
+        if (!response.ok) {
+          console.error("Error al crear cliente:", result.error);
+          alert("❌ Error: " + (result.error || "No se pudo crear el cliente."));
+          return;
+        }
+
+        alert("✅ Cliente creado exitosamente.");
+        console.log("Cliente registrado:", result.cliente);
+
+        // Limpiar formulario
+        form.reset();
+      } catch (error) {
+        console.error("Error inesperado:", error);
+        alert("⚠️ Error inesperado. Intenta nuevamente.");
+      }
+    });
+  });
+</script>
+
 </body>
 </html>
