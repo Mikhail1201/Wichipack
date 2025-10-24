@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Administrar Clientes - WichiPack</title>
   <link rel="stylesheet" href="../styles.css">
 </head>
+
 <body class="admin-body">
   <header class="admin-header">
     <h1 class="logo">WichiPack</h1>
@@ -15,41 +17,35 @@
   <main class="admin-main">
     <div class="admin-content">
       <h2 class="titulo-seccion">Administrar Clientes</h2>
-      <table class="tabla">
+      <table class="tabla" id="tabla-clientes">
         <thead>
           <tr>
             <th>ID</th>
+            <th>Cédula</th>
             <th>Nombre</th>
-            <th>Correo</th>
+            <th>Apellido</th>
             <th>Teléfono</th>
-            <th>Acciones</th>
+            <th>Correo</th>
+            <th>Dirección</th>
           </tr>
         </thead>
-        <tbody>
-          <tr>
-            <td>1</td>
-            <td>Karla Ardila</td>
-            <td>karla@example.com</td>
-            <td>3101234567</td>
-            <td><button class="btn-eliminar">Eliminar</button></td>
-          </tr>
+        <tbody id="clientes-body">
+          <!-- Los clientes se cargarán dinámicamente aquí -->
         </tbody>
       </table>
     </div>
   </main>
+
   <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
       try {
-        // 🟢 1. Obtener el token guardado después del login
+        // 🟢 1. Verificar sesión
         const token = localStorage.getItem("token");
-
         if (!token) {
-          // Si no hay token, redirigir al login
           window.location.href = "/Login/index.html";
           return;
         }
 
-        // 🟢 2. Enviar token al endpoint checkSession (ahora método POST)
         const response = await fetch("/api/checkSession", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -57,31 +53,25 @@
         });
 
         const result = await response.json();
-
-        // 🟢 3. Si la sesión no es válida, redirigir
         if (!response.ok) {
           console.warn(result.error || "Sesión no válida");
           window.location.href = "/Login/index.html";
           return;
         }
 
-        // 🟢 4. Redirigir según rol
-        switch (result.idrol) {
-          case 1:
-            break;
-          case 2:
-            window.location.href = "/Mainpage/mantenimiento.html";
-            break;
-          case 3:
-            break;
-          default:
-            alert("Rol desconocido. Contacta al administrador.");
+        // 🟢 2. Validar rol
+        if (result.idrol === 2) {
+          window.location.href = "/Mainpage/mantenimiento.html";
+          return;
         }
       } catch (error) {
         console.error("Error al verificar la sesión:", error);
         window.location.href = "/Login/index.html";
       }
     });
+
   </script>
+  <script src="main.js"></script>
 </body>
+
 </html>
