@@ -9,7 +9,7 @@
 <body class="admin-body">
   <header class="admin-header">
     <h1 class="logo">WichiPack</h1>
-    <button class="btn-volver" onclick="window.location.href='admin.html'">← Volver</button>
+    <button class="btn-volver" onclick="window.location.href='/Mainpage/admin.html'">← Volver</button>
   </header>
 
   <main class="admin-main">
@@ -37,5 +37,51 @@
       </table>
     </div>
   </main>
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 🟢 1. Obtener el token guardado después del login
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          // Si no hay token, redirigir al login
+          window.location.href = "/Login/index.html";
+          return;
+        }
+
+        // 🟢 2. Enviar token al endpoint checkSession (ahora método POST)
+        const response = await fetch("/api/checkSession", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+
+        const result = await response.json();
+
+        // 🟢 3. Si la sesión no es válida, redirigir
+        if (!response.ok) {
+          console.warn(result.error || "Sesión no válida");
+          window.location.href = "/Login/index.html";
+          return;
+        }
+
+        // 🟢 4. Redirigir según rol
+        switch (result.idrol) {
+          case 1:
+            break;
+          case 2:
+            window.location.href = "/Mainpage/mantenimiento.html";
+            break;
+          case 3:
+            break;
+          default:
+            alert("Rol desconocido. Contacta al administrador.");
+        }
+      } catch (error) {
+        console.error("Error al verificar la sesión:", error);
+        window.location.href = "/Login/index.html";
+      }
+    });
+  </script>
 </body>
 </html>
