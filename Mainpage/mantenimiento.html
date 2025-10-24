@@ -9,7 +9,7 @@
 <body class="admin-body">
   <header class="admin-header">
     <h1 class="logo">WichiPack</h1>
-    <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+    <button id="logoutBtn" class="btn-logout" onclick="logout()">Cerrar sesión</button>
   </header>
 
   <main class="admin-main">
@@ -29,33 +29,52 @@
     </div>
   </main>
 
-  <script>
-    document.getElementById('logoutBtn').addEventListener('click', () => {
-      window.location.href = '/Login/index.html';
-    });
+  <script src="main.js"></script>
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 🟢 1. Obtener el token guardado después del login
+        const token = localStorage.getItem("token");
 
-    // Dropdown functionality
-    document.querySelectorAll('.dropdown-btn').forEach(btn => {
-      btn.addEventListener('click', (e) => {
-        e.stopPropagation();
-        const dropdown = btn.parentElement;
-        const content = dropdown.querySelector('.dropdown-content');
-        
-        // Cerrar otros dropdowns
-        document.querySelectorAll('.dropdown-content').forEach(dc => {
-          if (dc !== content) dc.classList.remove('show');
+        if (!token) {
+          // Si no hay token, redirigir al login
+          window.location.href = "/Login/index.html";
+          return;
+        }
+
+        // 🟢 2. Enviar token al endpoint checkSession (ahora método POST)
+        const response = await fetch("/api/checkSession", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
         });
-        
-        // Toggle actual dropdown
-        content.classList.toggle('show');
-      });
-    });
 
-    // Cerrar dropdowns al hacer clic fuera
-    document.addEventListener('click', () => {
-      document.querySelectorAll('.dropdown-content').forEach(dc => {
-        dc.classList.remove('show');
-      });
+        const result = await response.json();
+
+        // 🟢 3. Si la sesión no es válida, redirigir
+        if (!response.ok) {
+          console.warn(result.error || "Sesión no válida");
+          window.location.href = "/Login/index.html";
+          return;
+        }
+
+        // 🟢 4. Redirigir según rol
+        switch (result.idrol) {
+          case 1:
+            window.location.href = "/Mainpage/admin.html";
+            break;
+          case 2:
+            break;
+          case 3:
+            window.location.href = "/Mainpage/recepcionista.html";
+            break;
+          default:
+            alert("Rol desconocido. Contacta al administrador.");
+        }
+      } catch (error) {
+        console.error("Error al verificar la sesión:", error);
+        window.location.href = "/Login/index.html";
+      }
     });
   </script>
 </body>

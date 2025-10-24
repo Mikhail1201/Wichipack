@@ -34,37 +34,46 @@
       try {
         const response = await fetch('/api/auth', {
           method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
+          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ email, password }),
         });
 
-
-        const result = await response.json();
+        // Leer como texto y parsear con fallback por si el servidor devuelve HTML/otro
+        const text = await response.text();
+        let result;
+        try {
+          result = text ? JSON.parse(text) : {};
+        } catch (e) {
+          result = { error: text || response.statusText };
+        }
 
         if (!response.ok) {
-          alert("Error: " + (result.error || "Error desconocido"));
+          alert('Error: ' + (result.error || response.statusText));
           return;
+        }
+
+        // Guardar token si viene del servidor
+        if (result.access_token) {
+          localStorage.setItem('token', result.access_token);
         }
 
         // Redirigir según idrol
         switch (result.idrol) {
           case 1:
-            window.location.href = "/Mainpage/admin.html";
+            window.location.href = '/Mainpage/admin.html';
             break;
           case 2:
-            window.location.href = "/Mainpage/mantenimiento.html";
+            window.location.href = '/Mainpage/mantenimiento.html';
             break;
           case 3:
-            window.location.href = "/Mainpage/recepcionista.html";
+            window.location.href = '/Mainpage/recepcionista.html';
             break;
           default:
-            alert("Rol desconocido. Contacta al administrador.");
+            alert('Rol desconocido. Contacta al administrador.');
         }
       } catch (error) {
-        console.error("Error en el inicio de sesión:", error);
-        alert("Error inesperado en el inicio de sesión.");
+        console.error('Error en el inicio de sesión:', error);
+        alert('Error inesperado en el inicio de sesión.');
       }
     });
   </script>

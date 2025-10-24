@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
@@ -10,14 +11,14 @@
 <body class="admin-body">
   <header class="admin-header">
     <h1 class="logo">WichiPack</h1>
-    <button id="logoutBtn" class="btn-logout">Cerrar sesión</button>
+    <button id="logoutBtn" class="btn-logout" onclick="logout()">Cerrar sesión</button>
   </header>
 
   <main class="admin-main">
     <div class="admin-content">
       <h2>Opciones del Administrador</h2>
       <div class="admin-options">
-        
+
         <!-- Facturación -->
         <div class="dropdown">
           <button class="admin-card dropdown-btn">📄 Facturación</button>
@@ -66,10 +67,55 @@
     </div>
   </main>
 
-  <script>
-    document.getElementById("logoutBtn").addEventListener("click", () => {
-      window.location.href = "/Login/index.html";
+  <script src="main.js"></script>
+  <script type="module">
+    document.addEventListener("DOMContentLoaded", async () => {
+      try {
+        // 🟢 1. Obtener el token guardado después del login
+        const token = localStorage.getItem("token");
+
+        if (!token) {
+          // Si no hay token, redirigir al login
+          window.location.href = "/Login/index.html";
+          return;
+        }
+
+        // 🟢 2. Enviar token al endpoint checkSession (ahora método POST)
+        const response = await fetch("/api/checkSession", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ token }),
+        });
+
+        const result = await response.json();
+
+        // 🟢 3. Si la sesión no es válida, redirigir
+        if (!response.ok) {
+          console.warn(result.error || "Sesión no válida");
+          window.location.href = "/Login/index.html";
+          return;
+        }
+
+        // 🟢 4. Redirigir según rol
+        switch (result.idrol) {
+          case 1:
+            break;
+          case 2:
+            window.location.href = "/Mainpage/mantenimiento.html";
+            break;
+          case 3:
+            window.location.href = "/Mainpage/recepcionista.html";
+            break;
+          default:
+            alert("Rol desconocido. Contacta al administrador.");
+        }
+      } catch (error) {
+        console.error("Error al verificar la sesión:", error);
+        window.location.href = "/Login/index.html";
+      }
     });
   </script>
+
 </body>
+
 </html>
