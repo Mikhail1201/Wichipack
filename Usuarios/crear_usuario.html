@@ -9,7 +9,7 @@
 <body class="crear-usuario-body">
   <header class="main-header">
     <h1 class="page-title">Crear usuario</h1>
-    <button class="btn-close" onclick="window.location.href='admin.html'">✕</button>
+    <button class="btn-close" onclick="window.location.href='/Mainpage/admin.html'">✕</button>
   </header>
 
   <section class="create-user-container">
@@ -31,12 +31,41 @@
           <option>Mantenimiento</option>
         </select>
 
-        <label for="telefono">Teléfono:</label>
-        <input type="tel" id="telefono" placeholder="Ej: 31265455">
-
         <button type="submit" class="btn-save">Guardar usuario</button>
       </form>
     </div>
   </section>
+  <script>
+    async function crearUsuario(event) {
+      event.preventDefault();
+
+      const username = document.getElementById('nombre').value;
+      const correo = document.getElementById('correo').value;
+      const contrasena = document.getElementById('contrasena').value;
+      const accesos = document.getElementById('accesos').value;
+
+      const idrolMap = {
+        'Administrador': 1,
+        'Recepcionista': 2,
+        'Mantenimiento': 3
+      };
+      const idrol = idrolMap[accesos];
+
+      const response = await fetch('/api/createUser', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({username: username, email: correo, idrol: idrol, password: contrasena })
+      });
+
+      const result = await response.json();
+      if (response.ok) {
+        alert('Usuario creado exitosamente');
+        window.location.href = 'admin.html';
+      } else {
+        alert('Error al crear usuario: ' + (result.error || 'Error desconocido'));
+      }
+      
+    }
+  </script>
 </body>
 </html>
