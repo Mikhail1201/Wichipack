@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Crear Cliente - WichiPack</title>
   <link rel="stylesheet" href="../styles.css">
 </head>
+
 <body class="admin-body">
   <header class="admin-header">
     <h1 class="logo">WichiPack</h1>
@@ -33,64 +35,64 @@
     </div>
   </main>
   <script>
-  document.addEventListener("DOMContentLoaded", () => {
-    const form = document.querySelector(".formulario");
+    document.addEventListener("DOMContentLoaded", () => {
+      const form = document.querySelector(".formulario");
 
-    form.addEventListener("submit", async (e) => {
-      e.preventDefault();
+      form.addEventListener("submit", async (e) => {
+        e.preventDefault();
 
-      // Obtener los valores del formulario
-      const inputs = form.querySelectorAll("input");
-      const cedula = inputs[0].value.trim();
-      const nombre = inputs[1].value.trim();
-      const apellido = inputs[2].value.trim();
-      const email = inputs[3].value.trim();
-      const telefono = inputs[4].value.trim();
-      const direccion = inputs[5].value.trim();
+        // Obtener los valores del formulario
+        const inputs = form.querySelectorAll("input");
+        const cedula = inputs[0].value.trim();
+        const nombre = inputs[1].value.trim();
+        const apellido = inputs[2].value.trim();
+        const email = inputs[3].value.trim();
+        const telefono = inputs[4].value.trim();
+        const direccion = inputs[5].value.trim();
 
-      // Validar que todos los campos estén completos
-      if (!cedula || !nombre || !apellido || !email || !telefono || !direccion) {
-        alert("Por favor, completa todos los campos antes de guardar.");
-        return;
-      }
-
-      try {
-        const response = await fetch("/api/createClient", {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-          },
-          body: JSON.stringify({
-            cedula,
-            nombre,
-            apellido,
-            telefono,
-            email,
-            direccion,
-          }),
-        });
-
-        const result = await response.json();
-
-        if (!response.ok) {
-          console.error("Error al crear cliente:", result.error);
-          alert("❌ Error: " + (result.error || "No se pudo crear el cliente."));
+        // Validar que todos los campos estén completos
+        if (!cedula || !nombre || !apellido || !email || !telefono || !direccion) {
+          alert("Por favor, completa todos los campos antes de guardar.");
           return;
         }
 
-        alert("✅ Cliente creado exitosamente.");
-        console.log("Cliente registrado:", result.cliente);
+        try {
+          const response = await fetch("/api/createClient", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({
+              cedula,
+              nombre,
+              apellido,
+              telefono,
+              email,
+              direccion,
+            }),
+          });
 
-        // Limpiar formulario
-        form.reset();
-      } catch (error) {
-        console.error("Error inesperado:", error);
-        alert("⚠️ Error inesperado. Intenta nuevamente.");
-      }
+          const result = await response.json();
+
+          if (!response.ok) {
+            console.error("Error al crear cliente:", result.error);
+            alert("❌ Error: " + (result.error || "No se pudo crear el cliente."));
+            return;
+          }
+
+          alert("✅ Cliente creado exitosamente.");
+          console.log("Cliente registrado:", result.cliente);
+
+          // Limpiar formulario
+          form.reset();
+        } catch (error) {
+          console.error("Error inesperado:", error);
+          alert("⚠️ Error inesperado. Intenta nuevamente.");
+        }
+      });
     });
-  });
-</script>
-<script type="module">
+  </script>
+  <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
       try {
         // 🟢 1. Obtener el token guardado después del login
@@ -137,4 +139,5 @@
     });
   </script>
 </body>
+
 </html>
