@@ -23,6 +23,11 @@ async function getSupabaseConfig() {
   }
 }
 
+function isUuid(str) {
+  if (!str) return false;
+  return /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(String(str));
+}
+
 /**
  * Elimina un usuario tanto de la tabla "usuarios"
  * como del sistema de autenticación de Supabase.
@@ -43,23 +48,44 @@ export async function deleteUser(idusuario) {
     // 2️⃣ Buscar usuario usando getUsersData()
     const usuarios = await getUsersData();
     const existingUser = usuarios.find(
-      (u) => u.idusuario === idusuario || u.id === idusuario
+      (u) => String(u.idusuario) === String(idusuario) || String(u.id) === String(idusuario)
     );
 
     if (!existingUser) {
       throw new Error("Usuario no encontrado en la base de datos.");
     }
 
-    // 3️⃣ Eliminar usuario de Supabase Auth (si tiene email)
-    if (existingUser.email) {
-      const { data: authData, error: authError } = await supabase.auth.admin.deleteUser(
-        existingUser.auth_id ?? existingUser.id_auth ?? existingUser.id // si tienes un campo de auth_id
-      );
+    // 3️⃣ Determinar UID de Auth (UUID). Intentar varios campos y, si no es UUID, buscar por email.
+    let authIdCandidate =
+      existingUser.auth_id ?? existingUser.id_auth ?? existingUser.idusuario ?? existingUser.id ?? null;
 
-      if (authError) {
-        console.warn("No se pudo eliminar de Auth:", authError.message);
-        // No lanzamos error crítico porque puede existir solo en la tabla
+    let authId = null;
+    if (isUuid(authIdCandidate)) {
+      authId = String(authIdCandidate);
+    } else if (existingUser.email) {
+      // buscar en Auth por email
+      const { data: listData, error: listErr } = await supabase.auth.admin.listUsers();
+      if (listErr) {
+        console.warn("Advertencia: no se pudo listar usuarios en Auth:", listErr.message || listErr);
+      } else if (listData && Array.isArray(listData.users)) {
+        const found = listData.users.find(
+          (u) => u.email && u.email.toLowerCase() === String(existingUser.email).toLowerCase()
+        );
+        if (found) authId = found.id;
       }
+    }
+
+    // Si tenemos authId válido, intentamos eliminar en Auth
+    if (authId) {
+      const { data: authData, error: authError } = await supabase.auth.admin.deleteUser(authId);
+      if (authError) {
+        console.warn("No se pudo eliminar de Auth:", authError.message || authError);
+        // No lanzamos error crítico; continuamos para eliminar de la tabla local
+      } else {
+        console.log("Usuario eliminado de Auth:", authId);
+      }
+    } else {
+      console.warn("No se encontró un UID válido de Auth para el usuario; se omitió la eliminación en Auth.");
     }
 
     // 4️⃣ Eliminar usuario de la tabla "usuarios"
