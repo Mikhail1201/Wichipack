@@ -1,26 +1,28 @@
 <!DOCTYPE html>
 <html lang="es">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>Administrar Usuarios - WichiPack</title>
-  <link rel="stylesheet" href="../styles.css">
+  <link rel="stylesheet" href="../styles.css" />
 </head>
 <body class="crear-usuario-body">
 
   <!-- Encabezado -->
   <header class="main-header">
     <h1 class="page-title">Administrar usuarios</h1>
-    <button class="btn-close" onclick="window.location.href='admin.html'">✕</button>
+    <button class="btn-close" onclick="window.location.href='/Mainpage/admin.html'">✕</button>
   </header>
   
   <!-- Contenido principal -->
   <main class="create-user-container">
     <div class="form-card user-list-card">
       <h2>Lista de usuarios</h2>
-      <p class="empty-msg">(Aquí se mostrarán los usuarios creados con opciones para eliminar o editar)</p>
+      <div id="user-list-message" style="color: black;">Cargando usuarios...</div>
+      <div id="user-list-container"></div>
     </div>
   </main>
 
+  <script src="main.js"></script>
 </body>
 </html>
