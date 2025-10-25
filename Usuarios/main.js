@@ -1,27 +1,54 @@
 const ROLE_MAP = {
+  0: "Superadmin",
   1: "Administrador",
   2: "Mantenimiento",
   3: "Recepcionista"
 };
 
 let currentUsers = [];
+let currentUserRol = null; // 🟢 NUEVO: guardamos el rol del usuario logueado
 
 async function fetchUsers() {
   try {
     const response = await fetch('/api/handleUser', { method: 'GET' });
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const result = await response.json();
-    const arr = Array.isArray(result.usuarios) ? result.usuarios
-              : Array.isArray(result.data) ? result.data
-              : Array.isArray(result) ? result
-              : [];
+    const arr = Array.isArray(result.usuarios)
+      ? result.usuarios
+      : Array.isArray(result.data)
+      ? result.data
+      : Array.isArray(result)
+      ? result
+      : [];
     return arr;
   } catch (err) {
     console.error('Error al obtener usuarios:', err);
     throw err;
   }
+}
+
+// 🟢 NUEVO: función para obtener el rol del usuario actual desde checkSession
+async function fetchCurrentUserRole() {
+  const token = localStorage.getItem('token');
+  if (!token) {
+    window.location.href = '/Login/index.html';
+    return null;
+  }
+
+  const res = await fetch('/api/checkSession', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ token })
+  });
+
+  if (!res.ok) {
+    window.location.href = '/Login/index.html';
+    return null;
+  }
+
+  const data = await res.json();
+  currentUserRol = data.idrol;
+  return currentUserRol;
 }
 
 function ensurePopupStyles() {
@@ -49,10 +76,8 @@ function ensurePopupStyles() {
       user-select: none;
     }
     .user-popup .item:hover { background: #f0f0f0; }
-    .user-popup .item {color: #333; }
+    .user-popup .item { color: #333; }
     .user-popup .item.danger { color: #b00020; }
-
-    /* Modal edit styles */
     .edit-modal-backdrop {
       position: fixed;
       inset: 0;
@@ -137,7 +162,6 @@ function showEditModal(user) {
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
 
-  // preselect rol
   const sel = modal.querySelector('#edit-rol');
   const rawRol = user.rol ?? user.idrol ?? '';
   if (rawRol !== '') sel.value = String(rawRol);
@@ -156,7 +180,7 @@ function showEditModal(user) {
     const payload = {
       idusuario: user.idusuario ?? user.id ?? null,
       username: newName,
-      rol: newRol ? Number(newRol) : null
+      idrol: newRol ? Number(newRol) : null
     };
     if (newPass) payload.password = newPass;
 
@@ -171,10 +195,9 @@ function showEditModal(user) {
         throw new Error(txt || `HTTP ${res.status}`);
       }
       const data = await res.json();
-      // actualizar currentUsers y re-renderizar
       currentUsers = currentUsers.map(u => {
-        if ((u.idusuario ?? u.id) === (payload.idusuario)) {
-          return { ...u, username: payload.username, rol: payload.rol ?? u.rol ?? u.idrol };
+        if ((u.idusuario ?? u.id) === payload.idusuario) {
+          return { ...u, username: payload.username, idrol: payload.idrol ?? u.idrol };
         }
         return u;
       });
@@ -187,7 +210,6 @@ function showEditModal(user) {
     }
   });
 
-  // close modal on backdrop click or ESC
   backdrop.addEventListener('click', (e) => {
     if (e.target === backdrop) removeEditModal();
   });
@@ -201,12 +223,42 @@ function removeEditModal() {
   if (bd) bd.remove();
 }
 
-// simple escape to avoid injection into value attr
 function escapeHtml(str) {
-  return String(str).replaceAll('"', '&quot;').replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+  return String(str)
+    .replaceAll('"', '&quot;')
+    .replaceAll('<', '&lt;')
+    .replaceAll('>', '&gt;');
 }
 
 function showPopupMenu(user, x, y) {
+  // 🚫 Evitar que usuarios no autorizados abran el menú de edición
+  if (!window.currentUserSession || typeof window.currentUserSession.idrol === 'undefined') {
+    alert('Sesión no válida. Refresca la página.');
+    return;
+  }
+
+  const session = window.currentUserSession;
+  const userRol = Number(user.idrol ?? user.rol ?? 0);
+  const sessionRol = Number(session.idrol ?? 99);
+  const sessionId = Number(session.idusuario ?? 99999);
+  const targetId = Number(user.idusuario ?? user.id ?? 99999);
+
+  // 🚫 Si el usuario actual es administrador (idrol=1) y
+  // el usuario objetivo tiene un rol igual o superior (superadmin=0 o admin=1),
+  // o si intenta editarse a sí mismo, bloqueamos el menú.
+  // o si el usuario actual es superadmin (idrol=0) y
+  // el usuario objetivo es otro superadmin (idrol=0), bloqueamos el menú.
+  if (
+    (sessionRol === 1 && userRol <= 1) ||
+    (sessionRol === 1 && targetId <= sessionId)
+    (sessionRol === 0 && userRol === 0)
+    (sessionId === 0  && targetId === 0)
+  ) {
+    console.warn('Acceso denegado: no puedes editar o eliminar este usuario.');
+    alert('No tienes permiso para modificar este usuario.');
+    return;
+  }
+
   removeExistingPopup();
   ensurePopupStyles();
 
@@ -236,12 +288,8 @@ function showPopupMenu(user, x, y) {
     return it;
   }
 
-  // <-- Aquí se implementa el popup de edición solicitado en la línea 107 -->
-  menu.appendChild(makeItem('Editar usuario', '', (u) => {
-    // abrir un modal de edición que permite cambiar: contraseña, nombre y rol
-    showEditModal(u);
-  }));
-
+  // 🟢 Menú seguro: solo se muestra si el usuario pasó las validaciones anteriores
+  menu.appendChild(makeItem('Editar usuario', '', (u) => showEditModal(u)));
   menu.appendChild(makeItem('Eliminar usuario', 'danger', async (u) => {
     if (!confirm(`Eliminar usuario ${u.username || u.email || u.idusuario}?`)) return;
     try {
@@ -269,6 +317,7 @@ function showPopupMenu(user, x, y) {
   }, 0);
 }
 
+
 function renderUserList(users) {
   const messageDiv = document.getElementById('user-list-message');
   const container = document.getElementById('user-list-container');
@@ -276,9 +325,22 @@ function renderUserList(users) {
   messageDiv.style.display = 'none';
   container.innerHTML = '';
 
-  if (!users || users.length === 0) {
+  // 🟢 NUEVO: filtrar usuarios según el rol actual
+  let filteredUsers = users;
+  if (currentUserRol === 0) {
+    // Si el usuario logueado es superadmin (idrol = 0),
+    // no mostrar usuarios con idrol = 0 (otros superadmins)
+    filteredUsers = users.filter(u => Number(u.idrol ?? u.rol) > 0);
+  }
+  if (currentUserRol === 1) {
+    // Si el usuario logueado es un administrador (idrol = 1),
+    // no mostrar usuarios con idrol <= 1 (otros admins o superadmin)
+    filteredUsers = users.filter(u => Number(u.idrol ?? u.rol) > 1);
+  }
+
+  if (!filteredUsers || filteredUsers.length === 0) {
     const p = document.createElement('p');
-    p.textContent = 'No hay usuarios registrados.';
+    p.textContent = 'No hay usuarios visibles para tu nivel de acceso.';
     container.appendChild(p);
     return;
   }
@@ -293,17 +355,16 @@ function renderUserList(users) {
   ['ID', 'Username', 'Email', 'Rol', 'Activo', 'Creado'].forEach(h => {
     const th = document.createElement('th');
     th.textContent = h;
-    th.style.textAlign = 'left';
+    th.style.textAlign = 'center';
     th.style.padding = '8px';
     th.style.borderBottom = '1px solid #ddd';
-    th.style.textAlign = 'center';
     headerRow.appendChild(th);
   });
   thead.appendChild(headerRow);
   table.appendChild(thead);
 
   const tbody = document.createElement('tbody');
-  users.forEach((user, idx) => {
+  filteredUsers.forEach((user) => {
     const tr = document.createElement('tr');
     tr.classList.add('clickable');
 
@@ -323,9 +384,8 @@ function renderUserList(users) {
     tr.appendChild(emailTd);
 
     const rolTd = document.createElement('td');
-    const rawRol = user.rol ?? user.idrol ?? '';
-    const rolNum = Number(rawRol);
-    rolTd.textContent = ROLE_MAP[rolNum] ?? rawRol ?? '';
+    const rolNum = Number(user.idrol ?? user.rol);
+    rolTd.textContent = ROLE_MAP[rolNum] ?? rolNum;
     rolTd.style.padding = '8px';
     tr.appendChild(rolTd);
 
@@ -335,7 +395,9 @@ function renderUserList(users) {
     tr.appendChild(activoTd);
 
     const createdTd = document.createElement('td');
-    createdTd.textContent = user.created_ad ? new Date(user.created_ad).toLocaleString() : '';
+    createdTd.textContent = user.created_ad
+      ? new Date(user.created_ad).toLocaleString()
+      : '';
     createdTd.style.padding = '8px';
     tr.appendChild(createdTd);
 
@@ -347,12 +409,14 @@ function renderUserList(users) {
 
     tbody.appendChild(tr);
   });
+
   table.appendChild(tbody);
   container.appendChild(table);
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
   try {
+    await fetchCurrentUserRole(); // 🟢 NUEVO: obtener rol antes de cargar usuarios
     currentUsers = await fetchUsers();
     renderUserList(currentUsers);
   } catch (err) {

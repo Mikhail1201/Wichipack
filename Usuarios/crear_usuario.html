@@ -26,15 +26,16 @@
 
         <label for="accesos">Accesos:</label>
         <select id="accesos">
-          <option>Administrador</option>
-          <option>Recepcionista</option>
-          <option>Mantenimiento</option>
+          <option value="1">Administrador</option>
+          <option value="3">Recepcionista</option>
+          <option value="2">Mantenimiento</option>
         </select>
 
         <button type="submit" class="btn-save">Guardar usuario</button>
       </form>
     </div>
   </section>
+
   <script>
     document.querySelector('.create-user-form').addEventListener('submit', crearUsuario);
 
@@ -46,17 +47,15 @@
       const contrasena = document.getElementById('contrasena').value;
       const accesos = document.getElementById('accesos').value;
 
-      const idrolMap = {
-        'Administrador': 1,
-        'Recepcionista': 3,
-        'Mantenimiento': 2
-      };
-      const idrol = idrolMap[accesos];
-
       const response = await fetch('/api/handleUser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({username: username, email: correo, idrol: idrol, password: contrasena })
+        body: JSON.stringify({
+          username: username,
+          email: correo,
+          idrol: Number(accesos),
+          password: contrasena
+        })
       });
 
       const result = await response.json();
@@ -66,22 +65,19 @@
       } else {
         alert('Error al crear usuario: ' + (result.error || 'Error desconocido'));
       }
-      
     }
   </script>
+
   <script type="module">
     document.addEventListener("DOMContentLoaded", async () => {
       try {
-        // 🟢 1. Obtener el token guardado después del login
         const token = localStorage.getItem("token");
 
         if (!token) {
-          // Si no hay token, redirigir al login
           window.location.href = "/Login/index.html";
           return;
         }
 
-        // 🟢 2. Enviar token al endpoint checkSession (ahora método POST)
         const response = await fetch("/api/checkSession", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -90,16 +86,26 @@
 
         const result = await response.json();
 
-        // 🟢 3. Si la sesión no es válida, redirigir
         if (!response.ok) {
           console.warn(result.error || "Sesión no válida");
           window.location.href = "/Login/index.html";
           return;
         }
 
-        // 🟢 4. Redirigir según rol
+        // 🟢 Si el usuario logueado es administrador (idrol = 1)
+        if (result.idrol === 1) {
+          // Ocultar la opción de Administrador
+          const select = document.getElementById("accesos");
+          const adminOption = select.querySelector('option[value="1"]');
+          if (adminOption) adminOption.remove();
+        }
+
+        // Redirección de seguridad si no es admin
         switch (result.idrol) {
+          case 0:
+            break;
           case 1:
+            // Se queda en admin
             break;
           case 2:
             window.location.href = "/Mainpage/mantenimiento.html";
@@ -110,6 +116,7 @@
           default:
             alert("Rol desconocido. Contacta al administrador.");
         }
+
       } catch (error) {
         console.error("Error al verificar la sesión:", error);
         window.location.href = "/Login/index.html";
