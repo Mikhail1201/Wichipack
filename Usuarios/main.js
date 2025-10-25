@@ -8,7 +8,7 @@ let currentUsers = [];
 
 async function fetchUsers() {
   try {
-    const response = await fetch('/api/getUsers');
+    const response = await fetch('/api/handleUser', { method: 'GET' });
     if (!response.ok) {
       throw new Error(`HTTP ${response.status}`);
     }
@@ -161,8 +161,8 @@ function showEditModal(user) {
     if (newPass) payload.password = newPass;
 
     try {
-      const res = await fetch('/api/updateUser', {
-        method: 'POST',
+      const res = await fetch('/api/handleUser', {
+        method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(payload)
       });
@@ -245,8 +245,8 @@ function showPopupMenu(user, x, y) {
   menu.appendChild(makeItem('Eliminar usuario', 'danger', async (u) => {
     if (!confirm(`Eliminar usuario ${u.username || u.email || u.idusuario}?`)) return;
     try {
-      const res = await fetch('/api/deleteUser', {
-        method: 'POST',
+      const res = await fetch('/api/handleUser', {
+        method: 'DELETE',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ idusuario: u.idusuario ?? u.id })
       });

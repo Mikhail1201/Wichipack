@@ -135,7 +135,7 @@
       console.log("🟢 Enviando nueva patineta:", payload);
 
       try {
-        const res = await fetch("/api/createProduct", {
+        const res = await fetch("/api/handleProduct", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(payload),

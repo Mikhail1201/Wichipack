@@ -8,7 +8,7 @@ let estadoNameToId = new Map(); // nombre → idestado
 // ==========================
 async function fetchProducts() {
     try {
-        const res = await fetch("/api/getProducts");
+        const res = await fetch("/api/handleProduct", { method: "GET" });
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         const data = await res.json();
         const arr = Array.isArray(data) ? data : (data.data || []);
@@ -212,7 +212,7 @@ async function showEditModal(product) {
         console.log("🟢 updateProduct payload:", payload);
         console.log("Valor actual del <select>:", selectEstado.value);
         try {
-            const res = await fetch("/api/updateProduct", {
+            const res = await fetch("/api/handleProduct", {
                 method: "PUT",
                 headers: { "Content-Type": "application/json" },
                 body: JSON.stringify(payload),
@@ -327,7 +327,7 @@ function showPopupMenu(product, x, y) {
         makeItem("Eliminar patineta", "danger", async (p) => {
             if (!confirm(`¿Eliminar patineta "${p.modelo}"?`)) return;
             try {
-                const res = await fetch("/api/deleteProduct", {
+                const res = await fetch("/api/handleProduct", {
                     method: "DELETE",
                     headers: { "Content-Type": "application/json" },
                     body: JSON.stringify({ idpatineta: p.idpatineta }),

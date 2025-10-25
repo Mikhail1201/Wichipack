@@ -2,7 +2,7 @@ let currentClients = [];
 
 async function fetchClients() {
   try {
-    const response = await fetch("/api/getClients");
+    const response = await fetch("/api/handleClient", { method: "GET" });
     if (!response.ok) throw new Error(`HTTP ${response.status}`);
     const data = await response.json();
     const arr = Array.isArray(data.clientes) ? data.clientes :
@@ -134,7 +134,7 @@ function showEditModal(client) {
     };
 
     try {
-      const res = await fetch("/api/updateClient", {
+      const res = await fetch("/api/handleClient", {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),
@@ -193,7 +193,7 @@ function showPopupMenu(client, x, y) {
   menu.appendChild(makeItem("Eliminar cliente", "danger", async (c) => {
     if (!confirm(`¿Eliminar cliente ${c.nombre} ${c.apellido}?`)) return;
     try {
-      const res = await fetch("/api/deleteClient", {
+      const res = await fetch("/api/handleClient", {
         method: "DELETE",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ idcliente: c.idcliente }),

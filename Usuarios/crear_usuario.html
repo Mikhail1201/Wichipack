@@ -53,7 +53,7 @@
       };
       const idrol = idrolMap[accesos];
 
-      const response = await fetch('/api/createUser', {
+      const response = await fetch('/api/handleUser', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({username: username, email: correo, idrol: idrol, password: contrasena })
