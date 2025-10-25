@@ -159,6 +159,13 @@ function showEditModal(user) {
     </div>
   `;
 
+  // borrar la opcion de admin si el usuario actual no es superadmin
+  if (currentUserRol !== 0) {
+    const rolSelect = modal.querySelector('#edit-rol');
+    const adminOption = rolSelect.querySelector('option[value="1"]');
+    if (adminOption) adminOption.remove();
+  }
+
   backdrop.appendChild(modal);
   document.body.appendChild(backdrop);
 
@@ -231,34 +238,6 @@ function escapeHtml(str) {
 }
 
 function showPopupMenu(user, x, y) {
-  // 🚫 Evitar que usuarios no autorizados abran el menú de edición
-  if (!window.currentUserSession || typeof window.currentUserSession.idrol === 'undefined') {
-    alert('Sesión no válida. Refresca la página.');
-    return;
-  }
-
-  const session = window.currentUserSession;
-  const userRol = Number(user.idrol ?? user.rol ?? 0);
-  const sessionRol = Number(session.idrol ?? 99);
-  const sessionId = Number(session.idusuario ?? 99999);
-  const targetId = Number(user.idusuario ?? user.id ?? 99999);
-
-  // 🚫 Si el usuario actual es administrador (idrol=1) y
-  // el usuario objetivo tiene un rol igual o superior (superadmin=0 o admin=1),
-  // o si intenta editarse a sí mismo, bloqueamos el menú.
-  // o si el usuario actual es superadmin (idrol=0) y
-  // el usuario objetivo es otro superadmin (idrol=0), bloqueamos el menú.
-  if (
-    (sessionRol === 1 && userRol <= 1) ||
-    (sessionRol === 1 && targetId <= sessionId)
-    (sessionRol === 0 && userRol === 0)
-    (sessionId === 0  && targetId === 0)
-  ) {
-    console.warn('Acceso denegado: no puedes editar o eliminar este usuario.');
-    alert('No tienes permiso para modificar este usuario.');
-    return;
-  }
-
   removeExistingPopup();
   ensurePopupStyles();
 
@@ -288,8 +267,8 @@ function showPopupMenu(user, x, y) {
     return it;
   }
 
-  // 🟢 Menú seguro: solo se muestra si el usuario pasó las validaciones anteriores
   menu.appendChild(makeItem('Editar usuario', '', (u) => showEditModal(u)));
+
   menu.appendChild(makeItem('Eliminar usuario', 'danger', async (u) => {
     if (!confirm(`Eliminar usuario ${u.username || u.email || u.idusuario}?`)) return;
     try {
