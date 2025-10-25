@@ -16,7 +16,7 @@ export async function POST(req) {
     const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = await getSupabaseConfig();
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
 
-    const { modelo, numero_serie, fecha_compra, idEstado, ultima_revision, observaciones } = await req.json();
+    const { modelo, numero_serie, fecha_compra, idestado, ultima_revision, observaciones } = await req.json();
 
     // Verificar el último idpatineta
     const { data: patinetas, error: getError } = await supabase
@@ -36,7 +36,7 @@ export async function POST(req) {
         modelo,
         numero_serie,
         fecha_compra,
-        idEstado,
+        idestado,
         ultima_revision,
         observaciones,
       },
