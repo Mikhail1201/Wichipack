@@ -9,93 +9,34 @@
 <body class="admin-body">
     <header class="admin-header">
         <h1 class="logo">WichiPack</h1>
-        <button class="btn-volver" onclick="window.location.href='admin.html'">← Volver</button>
+        <button class="btn-volver" onclick="window.location.href='/Mainpage/admin.html'">← Volver</button>
     </header>
 
     <main class="admin-main">
         <div class="admin-content">
             <h2 class="titulo-seccion">Administrar Inventario</h2>
-            
-            <div class="inventario-actions">
-                <button class="btn-primary" onclick="window.location.href='agregar_producto.html'">
-                    + Agregar Producto
-                </button>
-            </div>
 
             <div class="inventario-container">
                 <table class="tabla">
                     <thead>
                         <tr>
                             <th>ID</th>
-                            <th>Nombre del Producto</th>
-                            <th>Cantidad</th>
-                            <th>Precio Unitario</th>
-                            <th>Valor Total</th>
-                            <th>Acciones</th>
+                            <th>Modelo</th>
+                            <th>Numero de serie</th>
+                            <th>Fecha de compra</th>
+                            <th>Estado</th>
+                            <th>Última revisión</th>
+                            <th>Observaciones</th>
                         </tr>
                     </thead>
                     <tbody id="inventario-body">
-                        <tr>
-                            <td colspan="6" style="text-align: center; padding: 40px; color: #9DB2BF;">
-                                No hay productos en el inventario
-                            </td>
-                        </tr>
+                        <!-- Los productos se cargarán aquí dinámicamente -->
                     </tbody>
                 </table>
             </div>
         </div>
     </main>
 
-    <script src="../app.js"></script>
-    <script>
-        // Inicializar inventario cuando la página carga
-        document.addEventListener('DOMContentLoaded', function() {
-            mostrarInventario();
-        });
-
-        function mostrarInventario() {
-            const inventarioBody = document.getElementById('inventario-body');
-            const inventario = JSON.parse(localStorage.getItem('inventario')) || [];
-            
-            if (inventario.length === 0) {
-                inventarioBody.innerHTML = `
-                    <tr>
-                        <td colspan="6" style="text-align: center; padding: 40px; color: #9DB2BF;">
-                            No hay productos en el inventario
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            inventarioBody.innerHTML = inventario.map((producto, index) => `
-                <tr>
-                    <td>${producto.id || index + 1}</td>
-                    <td>${producto.nombre}</td>
-                    <td>${producto.cantidad}</td>
-                    <td>$${parseFloat(producto.precio).toLocaleString('es-CO')}</td>
-                    <td>$${(producto.cantidad * parseFloat(producto.precio)).toLocaleString('es-CO')}</td>
-                    <td>
-                        <button class="btn-editar" onclick="editarProducto(${index})">✏️</button>
-                        <button class="btn-eliminar" onclick="eliminarProducto(${index})">🗑️</button>
-                    </td>
-                </tr>
-            `).join('');
-        }
-
-        function editarProducto(index) {
-            alert('Función de edición en desarrollo');
-        }
-
-        function eliminarProducto(index) {
-            if (confirm('¿Estás seguro de eliminar este producto?')) {
-                let inventario = JSON.parse(localStorage.getItem('inventario')) || [];
-                inventario.splice(index, 1);
-                localStorage.setItem('inventario', JSON.stringify(inventario));
-                mostrarInventario();
-                alert('Producto eliminado correctamente');
-            }
-        }
-    </script>
+    <script src="main.js"></script>
 </body>
 </html>
