@@ -35,10 +35,10 @@ async function fetchCurrentUserRole() {
     return null;
   }
 
-  const res = await fetch('/api/checkSession', {
+  const res = await fetch('/api/auth', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ token })
+    body: JSON.stringify({ action: 'check', token: token })
   });
 
   if (!res.ok) {

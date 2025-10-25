@@ -5,40 +5,87 @@ export default async function handler(req, res) {
     return res.status(405).json({ error: "Método no permitido" });
   }
 
+  const { action, email, password, token } = req.body;
+
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+  const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
   try {
-    const { email, password } = req.body;
+    // ===============================
+    // 🔹 LOGIN
+    // ===============================
+    if (action === "login") {
+      if (!email || !password)
+        return res.status(400).json({ error: "Faltan credenciales" });
 
-    const SUPABASE_URL = process.env.SUPABASE_URL;
-    const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY;
+      const { data: authData, error: authError } =
+        await supabase.auth.signInWithPassword({ email, password });
 
-    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+      if (authError) return res.status(401).json({ error: authError.message });
 
-    // Autenticación
-    const { data: authData, error: authError } =
-      await supabase.auth.signInWithPassword({ email, password });
+      const user = authData.user;
+      const { data: usuarioData, error: dbError } = await supabase
+        .from("usuarios")
+        .select("idrol")
+        .eq("email", user.email)
+        .single();
 
-    if (authError) {
-      return res.status(401).json({ error: authError.message });
+      if (dbError || !usuarioData)
+        return res.status(404).json({ error: "Usuario no encontrado" });
+
+      return res.status(200).json({
+        success: true,
+        idrol: usuarioData.idrol,
+        access_token: authData.session?.access_token ?? null,
+      });
     }
 
-    const user = authData.user;
+    // ===============================
+    // 🔹 CHECK SESSION
+    // ===============================
+    if (action === "check") {
+      if (!token) return res.status(401).json({ error: "Token no proporcionado" });
 
-    // Buscar rol en la tabla usuarios
-    const { data: usuarioData, error: dbError } = await supabase
-      .from("usuarios")
-      .select("idrol")
-      .eq("email", user.email)
-      .single();
+      const { data: { user }, error: userError } = await supabase.auth.getUser(token);
+      if (userError || !user)
+        return res.status(401).json({ error: "Sesión inválida o expirada" });
 
-    if (dbError || !usuarioData) {
-      return res.status(404).json({ error: "Usuario no encontrado en la base de datos" });
+      const { data: usuarioData, error: dbError } = await supabase
+        .from("usuarios")
+        .select("idrol")
+        .eq("email", user.email)
+        .single();
+
+      if (dbError || !usuarioData)
+        return res.status(404).json({ error: "Usuario no encontrado" });
+
+      return res.status(200).json({
+        success: true,
+        email: user.email,
+        idrol: usuarioData.idrol,
+      });
     }
 
-    const { idrol } = usuarioData;
-    const access_token = authData.session?.access_token ?? null;
-    return res.status(200).json({ success: true, idrol, access_token });
+    // ===============================
+    // 🔹 LOGOUT
+    // ===============================
+    if (action === "logout") {
+      const { error } = await supabase.auth.signOut();
+      if (error)
+        return res.status(400).json({ error: "No se pudo cerrar la sesión" });
+
+      return res
+        .status(200)
+        .json({ success: true, message: "Sesión cerrada correctamente" });
+    }
+
+    // ===============================
+    // 🚫 Acción inválida
+    // ===============================
+    return res.status(400).json({ error: "Acción no reconocida" });
   } catch (err) {
-    console.error("Error en /api/auth/route.js:", err);
+    console.error("Error en /api/auth.js:", err);
     return res.status(500).json({ error: "Error interno del servidor" });
   }
 }

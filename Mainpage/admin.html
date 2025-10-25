@@ -80,11 +80,11 @@
           return;
         }
 
-        // 🟢 2. Enviar token al endpoint checkSession (ahora método POST)
-        const response = await fetch("/api/checkSession", {
+        // 🟢 2. Enviar token al endpoint auth (ahora método POST)
+        const response = await fetch("/api/auth", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ token }),
+          body: JSON.stringify({ action: "check", token: token }),
         });
 
         const result = await response.json();
