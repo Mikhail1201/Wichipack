@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gestión de Incidencias - WichiPack</title>
+    <link rel="stylesheet" href="../styles.css">
+</head>
+<body class="admin-body">
+    <header class="admin-header">
+        <h1 class="logo">WichiPack</h1>
+        <button class="btn-volver" onclick="window.location.href='administrar_inventario.html'">← Volver</button>
+    </header>
+
+    <main class="admin-main">
+        <div class="admin-content">
+            <h2 class="titulo-seccion">Gestión de Incidencias</h2>
+
+            <!-- Formulario para nueva incidencia -->
+            <div class="form-section">
+                <h3>Registrar Nueva Incidencia</h3>
+                <form id="incidenciaForm">
+                    <div class="form-group">
+                        <label for="patineta">Patineta:</label>
+                        <select id="patineta" required>
+                            <!-- Se cargará dinámicamente -->
+                        </select>
+                    </div>
+                    <div class="form-grid">
+                        <div class="form-group">
+                            <label for="tipo">Tipo:</label>
+                            <select id="tipo" required>
+                                <option value="mantenimiento">Mantenimiento</option>
+                                <option value="reparacion">Reparación</option>
+                                <option value="revision">Revisión</option>
+                                <option value="danio">Daño</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="prioridad">Prioridad:</label>
+                            <select id="prioridad" required>
+                                <option value="baja">Baja</option>
+                                <option value="media" selected>Media</option>
+                                <option value="alta">Alta</option>
+                                <option value="urgente">Urgente</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="estado">Estado:</label>
+                            <select id="estado" required>
+                                <!-- Se cargará dinámicamente -->
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="costo">Costo de Reparación:</label>
+                            <input type="number" id="costo" step="0.01" min="0" value="0">
+                        </div>
+                    </div>
+                    <div class="form-group">
+                        <label for="descripcion">Descripción:</label>
+                        <textarea id="descripcion" rows="4" required></textarea>
+                    </div>
+                    <button type="submit" class="btn-primary">Registrar Incidencia</button>
+                </form>
+            </div>
+
+            <!-- Tabla de incidencias -->
+            <div class="table-container">
+                <h3>Lista de Incidencias</h3>
+                <div class="table-responsive">
+                    <table class="custom-table" id="incidenciasTable">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Patineta</th>
+                                <th>Tipo</th>
+                                <th>Prioridad</th>
+                                <th>Estado</th>
+                                <th>Fecha Reporte</th>
+                                <th>Fecha Resolución</th>
+                                <th>Costo</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <!-- Se cargará dinámicamente -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Modal para ver/editar incidencia -->
+            <div id="incidenciaModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>Detalles de la Incidencia</h2>
+                        <button class="btn-close" onclick="closeModal('incidenciaModal')">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <form id="editIncidenciaForm">
+                            <input type="hidden" id="editId">
+                            <div class="form-grid">
+                                <div class="form-group">
+                                    <label>Patineta:</label>
+                                    <p id="modalPatineta" class="form-text"></p>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editTipo">Tipo:</label>
+                                    <select id="editTipo" required>
+                                        <option value="mantenimiento">Mantenimiento</option>
+                                        <option value="reparacion">Reparación</option>
+                                        <option value="revision">Revisión</option>
+                                        <option value="danio">Daño</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editPrioridad">Prioridad:</label>
+                                    <select id="editPrioridad" required>
+                                        <option value="baja">Baja</option>
+                                        <option value="media">Media</option>
+                                        <option value="alta">Alta</option>
+                                        <option value="urgente">Urgente</option>
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editEstado">Estado:</label>
+                                    <select id="editEstado" required>
+                                        <!-- Se cargará dinámicamente -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="editCosto">Costo de Reparación:</label>
+                                    <input type="number" id="editCosto" step="0.01" min="0">
+                                </div>
+                                <div class="form-group">
+                                    <label for="editFechaResolucion">Fecha de Resolución:</label>
+                                    <input type="date" id="editFechaResolucion">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="editDescripcion">Descripción:</label>
+                                <textarea id="editDescripcion" rows="4" required></textarea>
+                            </div>
+                            <div class="form-group">
+                                <label for="observaciones">Observaciones del cambio:</label>
+                                <textarea id="observaciones" rows="3"></textarea>
+                            </div>
+                            <button type="submit" class="btn-primary">Guardar Cambios</button>
+                        </form>
+
+                        <!-- Historial de estados -->
+                        <div class="historial-section mt-4">
+                            <h3>Historial de Estados</h3>
+                            <div class="table-responsive">
+                                <table class="custom-table" id="historialTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Fecha</th>
+                                            <th>Estado</th>
+                                            <th>Usuario</th>
+                                            <th>Observaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        <!-- Se cargará dinámicamente -->
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script src="main.js"></script>
+</body>
+</html>
