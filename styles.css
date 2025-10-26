@@ -494,14 +494,11 @@ button:disabled,
   background-color: var(--accent);
 }
 
-.dropdown:hover .dropdown-content {
+.dropdown-content.show{
   display: block;
   animation: fadeIn 0.3s ease;
 }
 
-.show {
-  display: block !important;
-}
 
 /* ========== CREAR USUARIO ========== */
 .crear-usuario-body {
