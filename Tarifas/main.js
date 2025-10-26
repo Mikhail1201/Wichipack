@@ -15,7 +15,6 @@ document.addEventListener('DOMContentLoaded', function() {
     // Establecer fecha mínima como hoy
     const today = new Date().toISOString().split('T')[0];
     document.getElementById('fechaInicio').min = today;
-    document.getElementById('fechaFin').min = today;
 });
 
 async function loadRates() {
@@ -45,11 +44,10 @@ function displayRates(rates) {
     rates.forEach(rate => {
         const row = ratesTable.insertRow();
         
-        // Formatear el valor como moneda
-        const valorFormateado = new Intl.NumberFormat('es-ES', {
-            style: 'currency',
-            currency: 'USD'
-        }).format(rate.valor);
+        // Formatear el valor como porcentaje
+        const valorFormateado = rate.tipo === 'Descuento' || rate.tipo === 'Mes'
+            ? `${(rate.valor * 100).toFixed(2)}%`
+            : `$${rate.valor.toFixed(2)}`;
 
         // Formatear las fechas
         const fechaInicio = new Date(rate.fecha_inicio).toLocaleDateString('es-ES', {
@@ -57,23 +55,16 @@ function displayRates(rates) {
             month: 'long',
             day: 'numeric'
         });
-        
-        const fechaFin = rate.fecha_fin ? new Date(rate.fecha_fin).toLocaleDateString('es-ES', {
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        }) : 'Sin fecha fin';
 
         // Capitalizar el tipo de tarifa
         const tipoFormateado = rate.tipo.charAt(0).toUpperCase() + rate.tipo.slice(1);
 
         row.innerHTML = `
-            <td style="font-weight: 600;">${rate.idtarifa}</td>
-            <td>${rate.nombre}</td>
-            <td>${tipoFormateado}</td>
-            <td style="font-weight: 600;">${valorFormateado}</td>
-            <td>${fechaInicio}</td>
-            <td>${fechaFin}</td>
+            <td style="font-weight: 600; color:#333;">${rate.idtarifa}</td>
+            <td style="color:#333;">${rate.nombre}</td>
+            <td style="color:#333;">${tipoFormateado}</td>
+            <td style="font-weight: 600;color:#333;">${valorFormateado}</td>
+            <td style="color:#333;">${fechaInicio}</td>
             <td>
                 <span class="badge ${rate.activa ? 'badge-success' : 'badge-warning'}">
                     ${rate.activa ? 'Activa' : 'Suspendida'}
@@ -102,12 +93,18 @@ function displayRates(rates) {
 async function handleAddRate(event) {
     event.preventDefault();
     
+    const valInput = document.getElementById('valor').value;
+    if (valInput < 1 && valInput > 0) {
+        var val = parseFloat(valInput);
+    } else if (valInput >= 1 && valInput <= 100) {
+        var val = parseFloat(valInput) / 100;
+    }
+
     const formData = {
         nombre: document.getElementById('nombre').value,
         tipo: document.getElementById('tipo').value,
-        valor: parseFloat(document.getElementById('valor').value),
+        valor: val,
         fecha_inicio: document.getElementById('fechaInicio').value,
-        fecha_fin: document.getElementById('fechaFin').value,
         activa: true
     };
 

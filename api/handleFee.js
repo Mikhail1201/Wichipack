@@ -1,62 +1,132 @@
-const express = require('express');
-const router = express.Router();
-const { pool } = require('./config');
-const authenticateToken = require('./auth').authenticateToken;
+import { createClient } from "@supabase/supabase-js";
 
-// Obtener todas las tarifas
-router.get('/', authenticateToken, async (req, res) => {
-    try {
-        const result = await pool.query(
-            'SELECT * FROM tarifas ORDER BY idtarifa DESC'
-        );
-        res.json(result.rows);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error al obtener las tarifas' });
-    }
-});
+// 🧩 Configuración de Supabase idéntica a tus otros handlers
+async function getSupabaseConfig() {
+  const SUPABASE_URL = process.env.SUPABASE_URL;
+  const SUPABASE_SERVICE_ROLE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
-// Crear nueva tarifa
-router.post('/', authenticateToken, async (req, res) => {
-    const { nombre, tipo, valor, fecha_inicio, fecha_fin, activa } = req.body;
+  if (SUPABASE_URL && SUPABASE_SERVICE_ROLE_KEY) {
+    return { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY };
+  }
 
-    try {
-        let query, params;
-        if (fecha_fin) {
-            query = 'INSERT INTO tarifas (nombre, tipo, valor, fecha_inicio, fecha_fin, activa) VALUES ($1, $2, $3, $4, $5, $6) RETURNING *';
-            params = [nombre, tipo, valor, fecha_inicio, fecha_fin, activa ?? true];
-        } else {
-            query = 'INSERT INTO tarifas (nombre, tipo, valor, fecha_inicio, activa) VALUES ($1, $2, $3, $4, $5) RETURNING *';
-            params = [nombre, tipo, valor, fecha_inicio, activa ?? true];
+  try {
+    const local = await import("../supabaseConfig.js");
+    return {
+      SUPABASE_URL: SUPABASE_URL || local.SUPABASE_URL,
+      SUPABASE_SERVICE_ROLE_KEY: SUPABASE_SERVICE_ROLE_KEY || local.SUPABASE_SERVICE_ROLE_KEY,
+    };
+  } catch (err) {
+    throw new Error("No se encontró configuración de Supabase.");
+  }
+}
+
+export default async function handler(req, res) {
+  const method = req.method.toUpperCase();
+
+  try {
+    const { SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY } = await getSupabaseConfig();
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
+
+    switch (method) {
+      // 📘 OBTENER TODAS LAS TARIFAS
+      case "GET": {
+        const { data, error } = await supabase
+          .from("tarifas")
+          .select("*")
+          .order("idtarifa", { ascending: true });
+
+        if (error) throw error;
+        return res.status(200).json(data);
+      }
+
+      // 🟢 CREAR NUEVA TARIFA
+      case "POST": {
+        const { nombre, tipo, valor, fecha_inicio, fecha_fin, activa } = req.body;
+
+        if (!nombre || !tipo || !valor || !fecha_inicio) {
+          return res.status(400).json({ error: "Faltan datos obligatorios (nombre, tipo, valor, fecha_inicio)" });
         }
 
-        const result = await pool.query(query, params);
-        res.status(201).json(result.rows[0]);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error al crear la tarifa' });
-    }
-});
+        // Obtener el último idtarifa para autoincrementarlo manualmente
+        const { data: last, error: lastErr } = await supabase
+          .from("tarifas")
+          .select("idtarifa")
+          .order("idtarifa", { ascending: false })
+          .limit(1);
 
-// Actualizar estado de tarifa (activar/suspender)
-router.put('/', authenticateToken, async (req, res) => {
-    const { idtarifa, activa } = req.body;
+        if (lastErr) throw lastErr;
+        const newId = last?.[0]?.idtarifa ? last[0].idtarifa + 1 : 1;
 
-    try {
-        const result = await pool.query(
-            'UPDATE tarifas SET activa = $1 WHERE idtarifa = $2 RETURNING *',
-            [activa, idtarifa]
-        );
+        const { data, error } = await supabase
+          .from("tarifas")
+          .insert([
+            {
+              idtarifa: newId,
+              nombre,
+              tipo,
+              valor,
+              fecha_inicio,
+              fecha_fin: fecha_fin || null,
+              activa: activa ?? true,
+            },
+          ])
+          .select();
 
-        if (result.rows.length === 0) {
-            return res.status(404).json({ error: 'Tarifa no encontrada' });
+        if (error) throw error;
+        console.log("✅ Tarifa creada:", data);
+        return res.status(200).json({ message: "Tarifa creada exitosamente", tarifa: data });
+      }
+
+      // 🟡 ACTUALIZAR TARIFA
+      case "PUT": {
+        const { idtarifa, nombre, tipo, valor, fecha_inicio, fecha_fin, activa } = req.body;
+
+        if (!idtarifa) {
+          return res.status(400).json({ error: "El campo idtarifa es obligatorio" });
         }
 
-        res.json(result.rows[0]);
-    } catch (err) {
-        console.error(err);
-        res.status(500).json({ error: 'Error al actualizar la tarifa' });
-    }
-});
+        const { data, error } = await supabase
+          .from("tarifas")
+          .update({
+            nombre,
+            tipo,
+            valor,
+            fecha_inicio,
+            fecha_fin: fecha_fin || null,
+            activa: activa ?? true,
+          })
+          .eq("idtarifa", idtarifa)
+          .select();
 
-module.exports = router;
+        if (error) throw error;
+        console.log("✅ Tarifa actualizada:", data);
+        return res.status(200).json({ message: "Tarifa actualizada exitosamente", tarifa: data });
+      }
+
+      // 🔴 ELIMINAR TARIFA
+      case "DELETE": {
+        const id = req.query.id || req.body.idtarifa;
+        if (!id) {
+          return res.status(400).json({ error: "Falta el parámetro idtarifa" });
+        }
+
+        const { data, error } = await supabase
+          .from("tarifas")
+          .delete()
+          .eq("idtarifa", id)
+          .select();
+
+        if (error) throw error;
+        console.log("✅ Tarifa eliminada:", data);
+        return res.status(200).json({ message: "Tarifa eliminada exitosamente", eliminado: data });
+      }
+
+      // 🚫 MÉTODO NO PERMITIDO
+      default:
+        return res.status(405).json({ error: `Método ${method} no permitido` });
+    }
+  } catch (error) {
+    console.error("❌ Error en handleFee:", error);
+    return res.status(500).json({ error: error.message });
+  }
+}
