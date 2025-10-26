@@ -44,21 +44,59 @@ function displayRates(rates) {
     ratesTable.innerHTML = '';
     rates.forEach(rate => {
         const row = ratesTable.insertRow();
+        
+        // Formatear el valor como moneda
+        const valorFormateado = new Intl.NumberFormat('es-ES', {
+            style: 'currency',
+            currency: 'USD'
+        }).format(rate.valor);
+
+        // Formatear las fechas
+        const fechaInicio = new Date(rate.fecha_inicio).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+        
+        const fechaFin = rate.fecha_fin ? new Date(rate.fecha_fin).toLocaleDateString('es-ES', {
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        }) : 'Sin fecha fin';
+
+        // Capitalizar el tipo de tarifa
+        const tipoFormateado = rate.tipo.charAt(0).toUpperCase() + rate.tipo.slice(1);
+
         row.innerHTML = `
-            <td>${rate.idtarifa}</td>
+            <td style="font-weight: 600;">${rate.idtarifa}</td>
             <td>${rate.nombre}</td>
-            <td>${rate.tipo}</td>
-            <td>$${rate.valor}</td>
-            <td>${new Date(rate.fecha_inicio).toLocaleDateString()}</td>
-            <td>${rate.fecha_fin ? new Date(rate.fecha_fin).toLocaleDateString() : 'Sin fecha fin'}</td>
-            <td>${rate.activa ? 'Activa' : 'Suspendida'}</td>
+            <td>${tipoFormateado}</td>
+            <td style="font-weight: 600;">${valorFormateado}</td>
+            <td>${fechaInicio}</td>
+            <td>${fechaFin}</td>
             <td>
-                <button onclick="toggleRateStatus(${rate.idtarifa}, ${!rate.activa})" class="btn-${rate.activa ? 'warning' : 'success'}">
+                <span class="badge ${rate.activa ? 'badge-success' : 'badge-warning'}">
+                    ${rate.activa ? 'Activa' : 'Suspendida'}
+                </span>
+            </td>
+            <td>
+                <button onclick="toggleRateStatus(${rate.idtarifa}, ${!rate.activa})" 
+                        class="btn-status ${rate.activa ? 'inactive' : 'active'}">
                     ${rate.activa ? 'Suspender' : 'Activar'}
                 </button>
             </td>
         `;
     });
+
+    // Si no hay tarifas, mostrar mensaje
+    if (rates.length === 0) {
+        const row = ratesTable.insertRow();
+        row.innerHTML = `
+            <td colspan="8" style="text-align: center; padding: 2rem;">
+                <p style="color: var(--accent); font-size: 1.1rem;">No hay tarifas registradas</p>
+            </td>
+        `;
+    }
 }
 
 async function handleAddRate(event) {

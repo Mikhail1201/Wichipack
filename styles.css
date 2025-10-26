@@ -1343,6 +1343,94 @@ section h2 {
   margin-top: 10px;
 }
 
+/* ========== TABLA DE TARIFAS ========== */
+.table-container {
+  margin-top: 2rem;
+  background: var(--blanco);
+  border-radius: 15px;
+  padding: 25px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.table-responsive {
+  overflow-x: auto;
+  margin-top: 1rem;
+}
+
+.custom-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--blanco);
+  border-radius: 10px;
+  overflow: hidden;
+}
+
+.custom-table thead {
+  background: var(--azul);
+  color: var(--blanco);
+}
+
+.custom-table th,
+.custom-table td {
+  padding: 15px;
+  text-align: left;
+  border-bottom: 1px solid var(--gris);
+}
+
+.custom-table th {
+  font-weight: 600;
+  text-transform: uppercase;
+  font-size: 0.85rem;
+  letter-spacing: 0.5px;
+}
+
+.custom-table tbody tr:hover {
+  background: var(--gris);
+}
+
+.custom-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.form-section {
+  background: var(--blanco);
+  padding: 25px;
+  border-radius: 15px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin-bottom: 30px;
+}
+
+.form-section h3 {
+  color: var(--azul);
+  margin-bottom: 20px;
+  font-size: 1.3rem;
+  font-weight: 600;
+}
+
+.btn-status {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: none;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.btn-status.active {
+  background-color: var(--success);
+  color: var(--blanco);
+}
+
+.btn-status.inactive {
+  background-color: var(--warning);
+  color: var(--blanco);
+}
+
+.btn-status:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+}
+
 /* ========== SCROLLBAR PERSONALIZADO ========== */
 ::-webkit-scrollbar {
   width: 10px;
