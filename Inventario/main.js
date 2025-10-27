@@ -41,7 +41,7 @@ async function fetchEstados() {
         currentEstados = estadosArr.map((e) => ({
             id: e.idestado ?? e.idEstado ?? e.id ?? e.id_estados ?? e.idestados ?? null,
             nombre: e.nombre ?? e.nombre_estado ?? e.name ?? "Desconocido",
-        }));
+        })).filter(e => e.id !== null && e.id > 0 && e.id < 10);
 
         estadoMap = new Map(currentEstados.map((e) => [String(e.id), e.nombre]));
         estadoNameToId = new Map(currentEstados.map((e) => [e.nombre.toLowerCase(), e.id]));

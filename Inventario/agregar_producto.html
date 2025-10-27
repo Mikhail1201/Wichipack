@@ -1,11 +1,13 @@
 <!DOCTYPE html>
 <html lang="es">
+
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Agregar Patineta - WichiPack</title>
   <link rel="stylesheet" href="../styles.css" />
 </head>
+
 <body class="producto-body">
   <div class="producto-container">
     <div class="producto-header">
@@ -16,34 +18,17 @@
     <form class="producto-form" id="formPatineta">
       <div class="form-group">
         <label for="modelo">Modelo</label>
-        <input
-          type="text"
-          id="modelo"
-          name="modelo"
-          placeholder="Ej: Patineta Pro X500"
-          required
-        />
+        <input type="text" id="modelo" name="modelo" placeholder="Ej: Patineta Pro X500" required />
       </div>
 
       <div class="form-group">
         <label for="numero_serie">Número de serie</label>
-        <input
-          type="text"
-          id="numero_serie"
-          name="numero_serie"
-          placeholder="Ej: SN-ABC12345"
-          required
-        />
+        <input type="text" id="numero_serie" name="numero_serie" placeholder="Ej: SN-ABC12345" required />
       </div>
 
       <div class="form-group">
         <label for="fecha_compra">Fecha de compra</label>
-        <input
-          type="date"
-          id="fecha_compra"
-          name="fecha_compra"
-          required
-        />
+        <input type="date" id="fecha_compra" name="fecha_compra" required />
       </div>
 
       <div class="form-group">
@@ -55,29 +40,18 @@
 
       <div class="form-group">
         <label for="ultima_revision">Última revisión</label>
-        <input
-          type="date"
-          id="ultima_revision"
-          name="ultima_revision"
-        />
+        <input type="date" id="ultima_revision" name="ultima_revision" />
       </div>
 
       <div class="form-group">
         <label for="observaciones">Observaciones</label>
-        <textarea
-          id="observaciones"
-          name="observaciones"
-          placeholder="Escribe observaciones sobre la patineta..."
-        ></textarea>
+        <textarea id="observaciones" name="observaciones"
+          placeholder="Escribe observaciones sobre la patineta..."></textarea>
       </div>
 
       <div class="form-actions">
         <button type="submit" class="btn-guardar">Guardar Patineta</button>
-        <button
-          type="button"
-          class="btn-cancelar"
-          onclick="window.location.href='/Mainpage/admin.html'"
-        >
+        <button type="button" class="btn-cancelar" onclick="window.location.href='/Mainpage/admin.html'">
           Cancelar
         </button>
       </div>
@@ -99,24 +73,30 @@
           ? data
           : data.data || data.estados || [];
 
+        // 🔹 Filtrar y normalizar: solo ids > 10 y < 20
+        const estadosFiltrados = estadosArr
+          .map((e) => ({
+            id: e.idestados ?? e.id_estado ?? e.id ?? e.idEstado ?? null,
+            nombre: e.nombre ?? e.nombre_estado ?? "Desconocido",
+          }))
+          .filter((e) => e.id !== null && e.id > 10 && e.id < 20);
+
+        // 🔹 Cargar los estados filtrados al select
         select.innerHTML = "<option value=''>-- Seleccionar estado --</option>";
-        estadosArr.forEach((e) => {
-          const id =
-            e.idestados ?? e.id_estado ?? e.id ?? e.idEstado ?? null;
-          const nombre = e.nombre ?? e.nombre_estado ?? "Desconocido";
-          if (id) {
-            const opt = document.createElement("option");
-            opt.value = id;
-            opt.textContent = nombre;
-            select.appendChild(opt);
-          }
+        estadosFiltrados.forEach((e) => {
+          const opt = document.createElement("option");
+          opt.value = e.id;
+          opt.textContent = e.nombre;
+          select.appendChild(opt);
         });
+
+        console.log("✅ Estados cargados (10 < id < 20):", estadosFiltrados);
       } catch (err) {
         console.error("Error cargando estados:", err);
-        select.innerHTML =
-          "<option value=''>Error al cargar estados</option>";
+        select.innerHTML = "<option value=''>Error al cargar estados</option>";
       }
     }
+
 
     // 🔹 Manejo de envío del formulario
     document.getElementById("formPatineta").addEventListener("submit", async (e) => {
@@ -159,4 +139,5 @@
     document.addEventListener("DOMContentLoaded", cargarEstados());
   </script>
 </body>
+
 </html>
