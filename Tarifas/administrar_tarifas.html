@@ -9,7 +9,7 @@
 <body>
     <header class="admin-header">
         <h1 class="logo">WichiPack</h1>
-        <button id="logoutBtn" class="btn-logout" onclick="logout()">Cerrar sesión</button>
+    <button id="backBtn" class="btn-back" onclick="if (history.length > 1) { history.back(); } else { window.location.href = '/Mainpage/admin.html'; }">Volver</button>
     </header>
 
     <main class="admin-main">
