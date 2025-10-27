@@ -4,10 +4,32 @@
 const API_FACTURAS = "/api/handleBill";
 const API_ESTADOS = "/api/getEstados";
 const API_CLIENTES = "/api/getClientes"; // 🧩 Nuevo: Endpoint para traer clientes
+const API_TARIFAS = "/api/handleFee";
+
 
 let currentFacturas = [];
 let estadosGlobal = [];
 let clientesGlobal = [];
+let tarifasGlobal = [];
+
+// 🚀 Cargar tarifas activas (día y mes)
+async function fetchTarifas() {
+    try {
+        const res = await fetch("/api/handleFee.js", { method: "GET" });
+        if (!res.ok) throw new Error("Error al obtener tarifas");
+
+        const tarifas = await res.json();
+
+        // Filtrar solo las activas
+        tarifasGlobal = tarifas.filter((t) => t.activa);
+        console.log("✅ Tarifas cargadas:", tarifasGlobal);
+    } catch (err) {
+        console.error("❌ Error al cargar tarifas:", err);
+        tarifasGlobal = [];
+    }
+}
+
+
 
 // =====================================================
 // 🔹 Cargar facturas desde Supabase
@@ -129,7 +151,10 @@ function ensurePopupStyles() {
 // =====================================================
 // 🔹 Renderizar lista de facturas
 // =====================================================
-function renderFacturaList(facturas) {
+// =====================================================
+// 🔹 Renderizar lista de facturas (con columna DesTarifas)
+// =====================================================
+async function renderFacturaList(facturas) {
     const cont = document.getElementById("lista-facturas-registro");
     cont.innerHTML = "";
 
@@ -138,21 +163,71 @@ function renderFacturaList(facturas) {
         return;
     }
 
+    // ⚙️ Asegurarse de que las tarifas estén cargadas
+    if (!window.tarifasGlobal) {
+        try {
+            const response = await fetch('/api/handleFee', {
+                method: 'GET',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${localStorage.getItem('token')}`
+                }
+            });
+            if (!response.ok) throw new Error('Error al cargar las tarifas');
+            window.tarifasGlobal = await response.json();
+        } catch (error) {
+            console.error('❌ Error al obtener tarifas:', error);
+            window.tarifasGlobal = [];
+        }
+    }
+
+    // 🗓️ Obtener fecha actual
+    const hoy = new Date();
+    const dias = ["Domingo","Lunes","Martes","Miércoles","Jueves","Viernes","Sábado"];
+    const meses = [
+        "Enero","Febrero","Marzo","Abril","Mayo","Junio",
+        "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+    ];
+
+    const nombreDia = dias[hoy.getDay()];
+    const nombreMes = meses[hoy.getMonth()];
+
+    // 🔍 Buscar tarifas activas coincidentes
+    const tarifaDia = window.tarifasGlobal.find(
+        t => t.tipo?.toLowerCase() === "descuento" &&
+             t.nombre?.toLowerCase() === nombreDia.toLowerCase() &&
+             t.activa
+    );
+
+    const tarifaMes = window.tarifasGlobal.find(
+        t => t.tipo?.toLowerCase() === "mes" &&
+             t.nombre?.toLowerCase() === nombreMes.toLowerCase() &&
+             t.activa
+    );
+
+    // 🧮 Valores de descuento
+    const descDia = tarifaDia ? parseFloat(tarifaDia.valor) : 0;
+    const descMes = tarifaMes ? parseFloat(tarifaMes.valor) : 0;
+    const descuentoTotal = descDia + descMes;
+
+    // 🧾 Crear tabla
     const table = document.createElement("table");
     table.className = "factura-table";
     table.style.width = "100%";
     table.style.borderCollapse = "collapse";
 
+    // Encabezado
     const thead = document.createElement("thead");
     const headerRow = document.createElement("tr");
     [
         "N° Factura",
         "Cliente",
         "Subtotal",
+        "DesTarifas",
         "IVA",
         "Total",
         "Estado",
-        "Fecha",
+        "Fecha"
     ].forEach((h) => {
         const th = document.createElement("th");
         th.textContent = h;
@@ -165,17 +240,27 @@ function renderFacturaList(facturas) {
     table.appendChild(thead);
 
     const tbody = document.createElement("tbody");
+
+    // 🔄 Recorrer las facturas y calcular los totales
     facturas.forEach((factura) => {
         const tr = document.createElement("tr");
 
+        const subtotal = Number(factura.subtotal) || 0;
+        const iva = Number(factura.iva) || 0;
+
+        // 💰 Aplicar descuento día + mes
+        const subtotalDescuento = subtotal * (1 - descuentoTotal);
+        const totalConIva = subtotalDescuento + iva;
+
         const celdas = [
             factura.numero_factura ?? factura.idfactura,
-            getClienteNombre(factura.idcliente), // 🧩 Cliente con nombre
-            `$${Number(factura.subtotal).toFixed(2)}`,
-            `$${Number(factura.iva).toFixed(2)}`,
-            `$${Number(factura.total).toFixed(2)}`,
-            getEstadoNombre(factura.idestado), // 🧩 Estado con nombre
-            new Date(factura.fecha).toLocaleString(),
+            getClienteNombre(factura.idcliente),
+            `$${subtotal.toFixed(2)}`,
+            `$${subtotalDescuento.toFixed(2)} (${(descuentoTotal * 100).toFixed(1)}%)`,
+            `$${iva.toFixed(2)}`,
+            `$${totalConIva.toFixed(2)}`,
+            getEstadoNombre(factura.idestado),
+            new Date(factura.fecha).toLocaleString("es-ES")
         ];
 
         celdas.forEach((valor) => {
@@ -198,6 +283,8 @@ function renderFacturaList(facturas) {
     table.appendChild(tbody);
     cont.appendChild(table);
 }
+
+
 
 // =====================================================
 // 🔹 Popup contextual (Editar / Eliminar)
@@ -264,75 +351,125 @@ function handleEsc(e) {
 // 🖨️ Imprimir factura (Generar PDF con detalles)
 // =====================================================
 async function imprimirFactura(factura) {
-  try {
-    // 1️⃣ Obtener factura con detalles desde el backend
-    const res = await fetch(`${API_FACTURAS}?idfactura=${factura.idfactura}&includeDetails=true`);
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    const data = await res.json();
+    try {
+        // 1️⃣ Obtener la factura con detalles desde el backend
+        const res = await fetch(`${API_FACTURAS}?idfactura=${factura.idfactura}&includeDetails=true`);
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        const data = await res.json();
 
-    // 2️⃣ Extraer datos
-    const { numero_factura, fecha, subtotal, iva, total, idcliente, idestado, detalles } = data;
-    const nombreCliente = getClienteNombre(idcliente);
-    const nombreEstado = getEstadoNombre(idestado);
+        // 2️⃣ Datos base
+        const { numero_factura, fecha, subtotal, iva, total, idcliente, idestado, detalles } = data;
+        const nombreCliente = getClienteNombre(idcliente);
+        const nombreEstado = getEstadoNombre(idestado);
 
-    // 3️⃣ Crear PDF con jsPDF
-    const { jsPDF } = window.jspdf;
-    const doc = new jsPDF();
+        // 3️⃣ Aplicar la misma lógica que renderFacturaList() para tarifas
+        const hoy = new Date();
+        const dias = [
+            "Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"
+        ];
+        const meses = [
+            "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+        ];
 
-    let y = 20;
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(16);
-    doc.text(`Factura #${numero_factura}`, 105, y, { align: "center" });
+        const nombreDia = dias[hoy.getDay()];
+        const nombreMes = meses[hoy.getMonth()];
 
-    y += 10;
-    doc.setFontSize(12);
-    doc.setFont("helvetica", "normal");
-    doc.text(`Fecha: ${new Date(fecha).toLocaleString()}`, 20, y);
-    y += 8;
-    doc.text(`Cliente: ${nombreCliente}`, 20, y);
-    y += 8;
-    doc.text(`Estado: ${nombreEstado}`, 20, y);
+        const tarifaDia = tarifasGlobal?.find(
+            (t) =>
+                t.tipo?.toLowerCase() === "descuento" &&
+                t.nombre?.toLowerCase() === nombreDia.toLowerCase() &&
+                (!t.fecha_inicio || new Date(t.fecha_inicio) <= hoy) &&
+                (!t.fecha_fin || new Date(t.fecha_fin) >= hoy) &&
+                t.activa
+        );
 
-    // 4️⃣ Encabezado de tabla
-    y += 12;
-    doc.setFont("helvetica", "bold");
-    doc.text("Concepto", 20, y);
-    doc.text("Cant.", 100, y);
-    doc.text("P. Unit.", 130, y);
-    doc.text("Subtotal", 170, y);
+        const tarifaMes = tarifasGlobal?.find(
+            (t) =>
+                t.tipo?.toLowerCase() === "mes" &&
+                t.nombre?.toLowerCase() === nombreMes.toLowerCase() &&
+                (!t.fecha_inicio || new Date(t.fecha_inicio) <= hoy) &&
+                (!t.fecha_fin || new Date(t.fecha_fin) >= hoy) &&
+                t.activa
+        );
 
-    // 5️⃣ Detalles
-    y += 6;
-    doc.setFont("helvetica", "normal");
-    detalles.forEach((d) => {
-      if (y > 270) { // Salto de página
-        doc.addPage();
-        y = 20;
-      }
-      doc.text(String(d.concepto || ""), 20, y);
-      doc.text(String(d.cantidad || "1"), 100, y, { align: "right" });
-      doc.text(`$${Number(d.precio_unitario).toFixed(2)}`, 135, y, { align: "right" });
-      doc.text(`$${Number(d.subtotal).toFixed(2)}`, 185, y, { align: "right" });
-      y += 6;
-    });
+        const descDia = tarifaDia ? parseFloat(tarifaDia.valor) : 0;
+        const descMes = tarifaMes ? parseFloat(tarifaMes.valor) : 0;
+        const descuentoTotal = descDia + descMes;
 
-    // 6️⃣ Totales
-    y += 10;
-    doc.setFont("helvetica", "bold");
-    doc.text(`Subtotal: $${Number(subtotal).toFixed(2)}`, 150, y, { align: "right" });
-    y += 6;
-    doc.text(`IVA: $${Number(iva).toFixed(2)}`, 150, y, { align: "right" });
-    y += 6;
-    doc.text(`TOTAL: $${Number(total).toFixed(2)}`, 150, y, { align: "right" });
+        const subtotalDescuento = subtotal * (1 - descuentoTotal);
+        const totalConIva = subtotalDescuento + iva;
 
-    // 7️⃣ Descargar el PDF
-    const nombreArchivo = `Factura_${numero_factura}.pdf`;
-    doc.save(nombreArchivo);
-  } catch (err) {
-    console.error("❌ Error al imprimir factura:", err);
-    alert("Error al generar el PDF de la factura.");
-  }
+        // 4️⃣ Crear PDF con jsPDF
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF();
+        let y = 20;
+
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(16);
+        doc.text(`Factura #${numero_factura}`, 105, y, { align: "center" });
+
+        y += 10;
+        doc.setFontSize(12);
+        doc.setFont("helvetica", "normal");
+        doc.text(`Fecha: ${new Date(fecha).toLocaleString()}`, 20, y);
+        y += 8;
+        doc.text(`Cliente: ${nombreCliente}`, 20, y);
+        y += 8;
+        doc.text(`Estado: ${nombreEstado}`, 20, y);
+
+        // 5️⃣ Encabezado de tabla
+        y += 12;
+        doc.setFont("helvetica", "bold");
+        doc.text("Concepto", 20, y);
+        doc.text("Cant.", 100, y);
+        doc.text("P. Unit.", 130, y);
+        doc.text("Subtotal", 170, y);
+
+        // 6️⃣ Detalles
+        y += 6;
+        doc.setFont("helvetica", "normal");
+        detalles.forEach((d) => {
+            if (y > 270) { // Salto de página
+                doc.addPage();
+                y = 20;
+            }
+            doc.text(String(d.concepto || ""), 20, y);
+            doc.text(String(d.cantidad || "1"), 100, y, { align: "right" });
+            doc.text(`$${Number(d.precio_unitario).toFixed(2)}`, 135, y, { align: "right" });
+            doc.text(`$${Number(d.subtotal).toFixed(2)}`, 185, y, { align: "right" });
+            y += 6;
+        });
+
+        // 7️⃣ Totales (idéntico al cálculo de la tabla facturas)
+        y += 10;
+        doc.setFont("helvetica", "bold");
+        doc.text(`Subtotal: $${Number(subtotal).toFixed(2)}`, 150, y, { align: "right" });
+        y += 6;
+        if (descuentoTotal > 0) {
+            doc.text(
+                `Descuento tarifa (${(descuentoTotal * 100).toFixed(1)}%): -$${(subtotal * descuentoTotal).toFixed(2)}`,
+                150,
+                y,
+                { align: "right" }
+            );
+            y += 6;
+        }
+        doc.text(`Subtotal con descuento: $${subtotalDescuento.toFixed(2)}`, 150, y, { align: "right" });
+        y += 6;
+        doc.text(`IVA: $${Number(iva).toFixed(2)}`, 150, y, { align: "right" });
+        y += 6;
+        doc.text(`TOTAL: $${totalConIva.toFixed(2)}`, 150, y, { align: "right" });
+
+        // 8️⃣ Guardar PDF
+        const nombreArchivo = `Factura_${numero_factura}.pdf`;
+        doc.save(nombreArchivo);
+    } catch (err) {
+        console.error("❌ Error al imprimir factura:", err);
+        alert("Error al generar el PDF de la factura.");
+    }
 }
+
 
 
 // =====================================================
@@ -449,31 +586,31 @@ async function eliminarFactura(factura) {
 // 🔍 Filtrar facturas por estado y búsqueda
 // =====================================================
 function filtrarFacturasLista() {
-  const estadoSeleccionado = document.getElementById("filtro-estado").value.toLowerCase();
-  const textoBusqueda = document.getElementById("buscar-factura").value.trim().toLowerCase();
+    const estadoSeleccionado = document.getElementById("filtro-estado").value.toLowerCase();
+    const textoBusqueda = document.getElementById("buscar-factura").value.trim().toLowerCase();
 
-  // Filtramos desde la lista global
-  const filtradas = currentFacturas.filter((factura) => {
-    // 🧩 Nombre del estado y cliente
-    const nombreEstado = getEstadoNombre(factura.idestado).toLowerCase();
-    const nombreCliente = getClienteNombre(factura.idcliente).toLowerCase();
-    const numeroFactura = (factura.numero_factura || factura.idfactura || "").toString().toLowerCase();
+    // Filtramos desde la lista global
+    const filtradas = currentFacturas.filter((factura) => {
+        // 🧩 Nombre del estado y cliente
+        const nombreEstado = getEstadoNombre(factura.idestado).toLowerCase();
+        const nombreCliente = getClienteNombre(factura.idcliente).toLowerCase();
+        const numeroFactura = (factura.numero_factura || factura.idfactura || "").toString().toLowerCase();
 
-    // 1️⃣ Filtro por estado
-    const coincideEstado =
-      estadoSeleccionado === "todas" || nombreEstado === estadoSeleccionado;
+        // 1️⃣ Filtro por estado
+        const coincideEstado =
+            estadoSeleccionado === "todas" || nombreEstado === estadoSeleccionado;
 
-    // 2️⃣ Filtro por texto (busca en número y nombre del cliente)
-    const coincideTexto =
-      textoBusqueda === "" ||
-      numeroFactura.includes(textoBusqueda) ||
-      nombreCliente.includes(textoBusqueda);
+        // 2️⃣ Filtro por texto (busca en número y nombre del cliente)
+        const coincideTexto =
+            textoBusqueda === "" ||
+            numeroFactura.includes(textoBusqueda) ||
+            nombreCliente.includes(textoBusqueda);
 
-    return coincideEstado && coincideTexto;
-  });
+        return coincideEstado && coincideTexto;
+    });
 
-  // Renderizar el resultado
-  renderFacturaList(filtradas);
+    // Renderizar el resultado
+    renderFacturaList(filtradas);
 }
 
 
@@ -484,4 +621,5 @@ document.addEventListener("DOMContentLoaded", async () => {
     await fetchEstados();
     await fetchClientes(); // 🧩 Cargamos clientes antes de las facturas
     await fetchFacturas();
+    await fetchTarifas();
 });
