@@ -6,12 +6,13 @@
     <title>Registro de Facturas</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="../styles.css">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
 </head>
 <body class="admin-body">
     <!-- HEADER -->
     <div class="admin-header">
         <div class="logo">REGISTRO DE FACTURAS</div>
-        <button class="btn-logout" onclick="volverMenuFacturas()">← Volver</button>
+        <button class="btn-logout" onclick="window.location.href='/Mainpage/admin.html'">← Volver</button>
     </div>
 
     <!-- CONTENIDO PRINCIPAL -->
@@ -23,8 +24,9 @@
                     <label>Estado:</label>
                     <select id="filtro-estado" onchange="filtrarFacturasLista()">
                         <option value="todas">Todas</option>
-                        <option value="pendiente">Pendientes</option>
-                        <option value="facturado">Facturadas</option>
+                        <option value="Aceptado">Aceptado</option>
+                        <option value="Pendiente">Pendiente</option>
+                        <option value="Rechazado">Rechazado</option>
                     </select>
                 </div>
                 <div class="filtro-group">
@@ -35,12 +37,6 @@
 
             <!-- Lista de Facturas -->
             <div id="lista-facturas-registro" class="lista-facturas-registro"></div>
-
-            <!-- Mensaje cuando no hay facturas -->
-            <div id="mensaje-vacio-facturas" class="mensaje-vacio-facturas" style="display: none;">
-                <p>📋 No hay facturas registradas</p>
-                <button class="btn-crear-primera" onclick="irACrearFactura()">Crear Primera Factura</button>
-            </div>
         </div>
     </div>
 
@@ -49,12 +45,12 @@
         <div class="modal-content-factura">
             <div class="modal-header-factura">
                 <h2>DETALLE DE FACTURA</h2>
-                <button class="btn-cerrar-modal-factura" onclick="cerrarModalFactura()">✕</button>
+                <button class="btn-cerrar-modal-factura">✕</button>
             </div>
             <div id="detalle-factura-modal"></div>
         </div>
     </div>
 
-    <script src="../app.js"></script>
+    <script src="main.js"></script>
 </body>
 </html>
