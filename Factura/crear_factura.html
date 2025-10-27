@@ -11,7 +11,7 @@
     <!-- HEADER -->
     <div class="header">
         <h1>CREAR FACTURA</h1>
-        <button class="btn-cerrar" onclick="cerrarPagina()">✕</button>
+        <button class="btn-cerrar" onclick="window.location.href='/Mainpage/admin.html'">✕</button>
     </div>
 
     <div class="container">
@@ -55,13 +55,13 @@
             </div>
 
             <div class="botones-accion">
-                <button class="btn-accion btn-guardar" onclick="guardarFactura()">Guardar</button>
-                <button class="btn-accion btn-cancelar" onclick="cancelarFactura()">Cancelar</button>
+                <button class="btn-accion btn-guardar">Guardar</button>
+                <button class="btn-accion btn-cancelar">Cancelar</button>
             </div>
-            <button class="btn-accion btn-volver" onclick="volverMenu()">Volver al Menú</button>
+            <button class="btn-accion btn-volver" onclick="window.location.href='/Mainpage/admin.html'">Volver al Menú</button>
         </div>
     </div>
 
-    <script src="../app.js"></script>
+    <script src="crearFactura.js"></script>
 </body>
 </html>

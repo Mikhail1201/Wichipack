@@ -63,7 +63,8 @@ export default async function handler(req, res) {
           const { data: detalles, error: detErr } = await supabase
             .from("detalle_facturas")
             .select("*")
-            .eq("idfactura", idfactura);
+            .eq("idfactura", idfactura)
+            .order("iddetalle", { ascending: true });
 
           if (detErr) throw detErr;
 
@@ -90,13 +91,45 @@ export default async function handler(req, res) {
         return res.status(200).json(facturas);
       }
 
-      // 🟢 CREAR FACTURA
+      // 🟢 CREAR FACTURA (y detalles si vienen)
       case "POST": {
-        const { subtotal, iva, total, idestado, idcliente } = req.body;
+        /**
+         * Body esperado (ejemplo):
+         * {
+         *   subtotal?: number,
+         *   iva?: number,
+         *   total?: number,
+         *   idestado: number,
+         *   idcliente?: number,
+         *   detalles?: [
+         *     { concepto, cantidad, precio_unitario, idalquiler? },
+         *     ...
+         *   ]
+         * }
+         */
 
-        if (!subtotal || !total || !idestado) {
-          return res.status(400).json({ error: "Faltan campos obligatorios" });
+        const { subtotal, iva, total, idestado, idcliente, detalles } = req.body;
+
+        if (!idestado) {
+          return res.status(400).json({ error: "Falta idestado (estado de la factura)" });
         }
+
+        // Validar detalles si vienen
+        const detallesArr = Array.isArray(detalles) ? detalles : [];
+
+        // Si no viene subtotal/total, calcular desde detalles
+        let computedSubtotal = 0;
+        if ((!subtotal || !total) && detallesArr.length > 0) {
+          for (const d of detallesArr) {
+            const cant = Number(d.cantidad ?? 1);
+            const pu = Number(d.precio_unitario ?? 0);
+            computedSubtotal += cant * pu;
+          }
+        }
+
+        const finalSubtotal = Number(subtotal ?? computedSubtotal ?? 0);
+        const finalIva = Number(iva ?? 0);
+        const finalTotal = Number(total ?? (finalSubtotal + finalIva));
 
         // 🧮 Obtener último número de factura
         const { data: lastFactura, error: fetchError } = await supabase
@@ -122,26 +155,75 @@ export default async function handler(req, res) {
 
         const fecha = new Date().toISOString();
 
-        const { data, error } = await supabase
+        // Insertar la factura
+        const { data: createdFacturaArr, error: createErr } = await supabase
           .from("facturas")
           .insert([
             {
               idfactura: newId,
               numero_factura: String(newNumero),
               fecha,
-              subtotal,
-              iva: iva || 0,
-              total,
+              subtotal: finalSubtotal,
+              iva: finalIva,
+              total: finalTotal,
               idestado,
-              idcliente,
+              idcliente: idcliente ?? null,
             },
           ])
           .select();
 
-        if (error) throw error;
+        if (createErr) throw createErr;
+        const createdFactura = Array.isArray(createdFacturaArr) ? createdFacturaArr[0] : createdFacturaArr;
+
+        // Si no hay detalles, devolvemos la factura creada
+        if (!detallesArr.length) {
+          return res.status(200).json({
+            message: "Factura creada correctamente",
+            factura: createdFactura,
+            detalles: [],
+          });
+        }
+
+        // ========== Insertar detalles ==========
+        // Obtener último iddetalle existente para autoincrement manual
+        const { data: lastDetalleData, error: lastDetErr } = await supabase
+          .from("detalle_facturas")
+          .select("iddetalle")
+          .order("iddetalle", { ascending: false })
+          .limit(1);
+
+        if (lastDetErr) throw lastDetErr;
+        let nextDetalleId = lastDetalleData?.[0]?.iddetalle ? lastDetalleData[0].iddetalle + 1 : 1;
+
+        // Preparar array de inserts para detalle_facturas
+        const detallesToInsert = detallesArr.map((d) => {
+          const cantidad = Number(d.cantidad ?? 1);
+          const precio_unitario = Number(d.precio_unitario ?? 0);
+          const subtotal_det = Number((cantidad * precio_unitario).toFixed(2));
+          const row = {
+            iddetalle: nextDetalleId++,
+            idfactura: createdFactura.idfactura,
+            concepto: d.concepto ?? `Item ${createdFactura.idfactura}`,
+            cantidad,
+            precio_unitario,
+            subtotal: subtotal_det,
+            idalquiler: d.idalquiler ?? null,
+          };
+          return row;
+        });
+
+        const { data: insertedDetails, error: detInsertErr } = await supabase
+          .from("detalle_facturas")
+          .insert(detallesToInsert)
+          .select();
+
+        if (detInsertErr) throw detInsertErr;
+
+        // ✅ Responder con factura + detalles
         return res.status(200).json({
-          message: "Factura creada correctamente",
-          factura: data,
+          message: "Factura y detalles creados correctamente",
+          factura: createdFactura,
+          detalles: insertedDetails,
         });
       }
 
