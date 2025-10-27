@@ -118,7 +118,7 @@ async function cargarProductos(selectEl) {
         const productos = await res.json();
         productos.forEach((p) => {
             const opt = document.createElement("option");
-            opt.value = p.idproducto;
+            opt.value = p.idproducto ?? p.idpatineta;
             opt.textContent = `${p.modelo}`;
             selectEl.appendChild(opt);
         });
@@ -146,13 +146,30 @@ async function cargarProductos(selectEl) {
 async function obtenerPrecioAlquiler(idCliente, idProducto) {
     try {
         const hoy = new Date().toISOString().split("T")[0];
-        const res = await fetch(`${API_BASE}/handleRent?idcliente=${idCliente}&idproducto=${idProducto}&fecha=${hoy}`);
+
+        // 🔹 Se trae todos los alquileres (o podrías mejorar tu endpoint para filtrar)
+        const res = await fetch("/api/handleRent");
+        if (!res.ok) throw new Error("Error al obtener alquileres");
+
         const alquileres = await res.json();
 
-        if (!alquileres.length) return 0;
+        // 🔹 Filtramos el alquiler correcto (cliente + producto + fecha)
+        const alquiler = alquileres.find(a =>
+            Number(a.idcliente) === Number(idCliente) &&
+            Number(a.idpatineta) === Number(idProducto) &&  // 👈 fuerza uso de idpatineta
+            a.fecha_hora_inicio?.slice(0, 10) === hoy       // 👈 más seguro que startsWith
+        );
+        
+        console.log(alquiler);
+        console.log("🔹 idCliente:", idCliente, "🔹 idProducto:", idProducto, "🔹 hoy:", hoy);
 
-        // Tomar el precio promedio o el primero
-        return alquileres[0].precio || 0;
+        if (alquiler && alquiler.precio) {
+            return parseFloat(alquiler.precio);
+        } else {
+            console.warn("⚠️ No se encontró alquiler para el cliente/producto/fecha actual");
+            return 0;
+        }
+
     } catch (err) {
         console.error("Error obteniendo alquiler:", err);
         return 0;
